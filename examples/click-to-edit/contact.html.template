@@ -8,14 +8,14 @@
   </ul>
 {{end -}}
 {{- define "view-contact" -}}
-  <div id="view-contact">
-    <div><label>First Name</label>: {{.FirstName}}</div>
-    <div><label>Last Name</label>: {{.LastName}}</div>
-    <div><label>Email</label>: {{.Email}}</div>
-    <a href="/contact/{{.ID}}/edit" hx-boost="true">
-      Click To Edit
-    </a>
-  </div>
+  <table id="view-contact">
+    <tr><td>First Name</td><td>{{.FirstName}}</td></tr>
+    <tr><td>Last Name</td><td>{{.LastName}}</td></tr>
+    <tr><td>Email</td><td>{{.Email}}</td></tr>
+  </table>
+  <a href="/contact/{{.ID}}/edit" hx-boost="true" role="button">
+    Click To Edit
+  </a>
 {{end}}
 {{- define "edit-contact"}}
   <form id="edit-contact" action="/contact/{{.ID}}" method="POST" hx-boost="true">
@@ -32,7 +32,7 @@
       <input id="email" type="email" name="email" value="{{.Email}}">
     </div>
     <button>Submit</button>
-    <a href="/contact/{{.ID}}" hx-boost="true">Cancel</a>
+    <a href="/contact/{{.ID}}" hx-boost="true" role="button">Cancel</a>
   </form>
 {{end -}}
 
@@ -47,13 +47,17 @@
   <meta name="description" content="Click to edit example" />
 
   <script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
 </head>
 <body>
-<nav>
-  <a href="/" hx-boost="true" hx-target="#view">Contacts</a>
-</nav>
 
-<div id="view" hx-swap="innerHTML" hx-target="#view">
+<header class="container">
+  <nav>
+    <a href="/" hx-boost="true" hx-target="#view">Contacts</a>
+  </nav>
+</header>
+
+<div id="view" hx-swap="innerHTML" hx-target="#view" class="container">
   {{execute .PageName .Data}}
 </div>
 </body>

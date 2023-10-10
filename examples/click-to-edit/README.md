@@ -6,3 +6,5 @@ It differs from the [htmx example](https://htmx.org/examples/click-to-edit/) in 
 
 To run this make sure you have sqlite3 in your path and then just run 'go run .' in this directory.
 You can then navigate to http://localhost:8080.
+
+The app uses [Pico CSS](https://picocss.com).
