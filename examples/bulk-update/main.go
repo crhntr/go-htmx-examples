@@ -71,27 +71,14 @@ func (server *Server) index(res http.ResponseWriter, req *http.Request, _ httpro
 }
 
 func (server *Server) activate(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	ctx := req.Context()
-	_ = req.ParseForm()
-	for _, idStr := range req.Form["ids"] {
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			continue
-		}
-		_ = server.db.SetStatus(ctx, database.SetStatusParams{
-			ID:     int64(id),
-			Active: true,
-		})
-	}
-	colors, err := server.db.ListColors(ctx)
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
-		return
-	}
-	server.writePage(res, req, "rows", http.StatusOK, colors)
+	server.setActiveStatus(res, req, true)
 }
 
 func (server *Server) deactivate(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	server.setActiveStatus(res, req, false)
+}
+
+func (server *Server) setActiveStatus(res http.ResponseWriter, req *http.Request, active bool) {
 	ctx := req.Context()
 	_ = req.ParseForm()
 	for _, idStr := range req.Form["ids"] {
@@ -101,7 +88,7 @@ func (server *Server) deactivate(res http.ResponseWriter, req *http.Request, _ h
 		}
 		_ = server.db.SetStatus(ctx, database.SetStatusParams{
 			ID:     int64(id),
-			Active: false,
+			Active: active,
 		})
 	}
 	colors, err := server.db.ListColors(ctx)
