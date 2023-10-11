@@ -20,23 +20,25 @@ import (
 	"github.com/crhntr/go-mysql-htmx/examples/click-to-edit/internal/database"
 )
 
-func main() {
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if _, err := db.ExecContext(context.Background(), initSQL); err != nil {
-		log.Fatal(err)
-	}
+//go:generate sqlc generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 
-	server := newServer(db)
-	mux := httprouter.New()
-	mux.GET("/", server.index)
-	mux.GET("/contact/:id", server.view)
-	mux.GET("/contact/:id/edit", server.edit)
-	mux.POST("/contact/:id", server.submit)
+//counterfeiter:generate -o internal/fakes --fake-name Querier internal/database Querier
+
+func main() {
+	db := must(sql.Open("sqlite3", ":memory:"))
+	_ = must(db.ExecContext(context.Background(), schemaSQL))
+	server := newServer(database.New(db))
+	h := httplog.Wrap(server.routes())
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":8080", httplog.Wrap(mux)))
+	log.Fatal(http.ListenAndServe(":8080", h))
+}
+
+func must[T any](value T, err error) T {
+	if err != nil {
+		log.Panicln(err)
+	}
+	return value
 }
 
 var (
@@ -44,21 +46,30 @@ var (
 	contactPages string
 
 	//go:embed schema.sql
-	initSQL string
+	schemaSQL string
 )
 
 type Server struct {
 	templates *template.Template
-	db        *database.Queries
+	db        database.Querier
 }
 
-func newServer(db database.DBTX) *Server {
+func newServer(db database.Querier) *Server {
 	server := &Server{
-		db: database.New(db),
+		db: db,
 	}
 	templates := template.Must(template.New("").Funcs(server.templateFunctions()).Parse(contactPages))
 	server.templates = templates
 	return server
+}
+
+func (server *Server) routes() http.Handler {
+	mux := httprouter.New()
+	mux.GET("/", server.index)
+	mux.GET("/contact/:id", server.handleContactID(server.view))
+	mux.GET("/contact/:id/edit", server.handleContactID(server.edit))
+	mux.POST("/contact/:id", server.handleContactID(server.submit))
+	return mux
 }
 
 func (server *Server) templateFunctions() template.FuncMap {
@@ -76,56 +87,53 @@ func (server *Server) execute(name string, data any) (template.HTML, error) {
 func (server *Server) index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	contacts, err := server.db.ListContacts(req.Context())
 	if err != nil {
-		server.writeError(res, StatusError{
-			Err:    err,
-			Status: http.StatusInternalServerError,
-		})
+		server.writeError(res, err)
 		return
 	}
 	server.writePage(res, req, "list-contacts", http.StatusOK, contacts)
 }
 
-func (server *Server) view(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-	ctx := req.Context()
-	id, err := server.contactID(params)
+func (server *Server) handleContactID(next func(http.ResponseWriter, *http.Request, int64)) httprouter.Handle {
+	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil {
+			server.writeError(res, StatusError{
+				Status: http.StatusBadRequest,
+				Err:    fmt.Errorf("failed to parse contact id: %w", err),
+			})
+			return
+		}
+		next(res, req, int64(id))
+	}
+}
+
+func (server *Server) view(res http.ResponseWriter, req *http.Request, id int64) {
+	contact, err := server.db.ContactWithID(req.Context(), id)
 	if err != nil {
 		server.writeError(res, err)
 		return
-	}
-	contact, err := server.db.ContactWithID(ctx, id)
-	if err != nil {
-		server.writeError(res, err)
 	}
 	server.writePage(res, req, "view-contact", http.StatusOK, contact)
 }
 
-func (server *Server) edit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-	ctx := req.Context()
-	id, err := server.contactID(params)
+func (server *Server) edit(res http.ResponseWriter, req *http.Request, id int64) {
+	contact, err := server.db.ContactWithID(req.Context(), id)
 	if err != nil {
 		server.writeError(res, err)
 		return
 	}
-	contact, err := server.db.ContactWithID(ctx, id)
-	if err != nil {
-		server.writeError(res, err)
-	}
-
 	server.writePage(res, req, "edit-contact", http.StatusOK, contact)
 }
 
-func (server *Server) submit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (server *Server) submit(res http.ResponseWriter, req *http.Request, id int64) {
 	if err := req.ParseForm(); err != nil {
-		server.writeError(res, err)
+		server.writeError(res, StatusError{
+			Status: http.StatusBadRequest,
+			Err:    err,
+		})
 		return
 	}
 	ctx := req.Context()
-	id, err := server.contactID(params)
-	if err != nil {
-		server.writeError(res, err)
-		return
-	}
-
 	if err := server.db.UpdateContact(ctx, database.UpdateContactParams{
 		ID:        id,
 		FirstName: req.Form.Get("first-name"),
@@ -138,8 +146,8 @@ func (server *Server) submit(res http.ResponseWriter, req *http.Request, params 
 	contact, err := server.db.ContactWithID(ctx, id)
 	if err != nil {
 		server.writeError(res, err)
+		return
 	}
-
 	server.writePage(res, req, "view-contact", http.StatusOK, contact)
 }
 
@@ -163,7 +171,7 @@ func (server *Server) writePage(res http.ResponseWriter, req *http.Request, name
 	}
 	if err != nil {
 		log.Println(err)
-		http.Error(res, "failed to writePage page", http.StatusInternalServerError)
+		http.Error(res, "failed to write page", http.StatusInternalServerError)
 		return
 	}
 
@@ -184,14 +192,8 @@ func (server *Server) writeError(res http.ResponseWriter, err error) {
 	var se StatusError
 	if errors.As(err, &se) {
 		status = se.Status
+	} else if errors.Is(err, sql.ErrNoRows) {
+		status = http.StatusNotFound
 	}
 	http.Error(res, err.Error(), status)
-}
-
-func (server *Server) contactID(params httprouter.Params) (int64, error) {
-	id, err := strconv.Atoi(params.ByName("id"))
-	if err != nil {
-		return 0, StatusError{Status: http.StatusBadRequest, Err: fmt.Errorf("failed to parse contact id: %w", err)}
-	}
-	return int64(id), nil
 }
