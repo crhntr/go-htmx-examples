@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Click to Load</title>
+  <meta charset="UTF-8" />
+  <script src="https://unpkg.com/htmx.org@1.9.6"
+          integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+  <table>
+    <tbody style="font-family: monospace;">
+      {{block "rows" . }}
+        {{range .}}
+          <tr>
+            <td>{{printf "%0b" .}}</td>
+            <td>{{printf "%0o" .}}</td>
+            <td>{{printf "%0d" .}}</td>
+            <td>{{printf "%0x" .}}</td>
+          </tr>
+        {{end}}
+      {{end}}
+      <tr id="button-row">
+        <td colspan="3">
+          <button class='btn' hx-get="/more-rows"
+                  hx-target="#button-row"
+                  hx-swap="beforebegin">
+            Load More Random Numbers...
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
