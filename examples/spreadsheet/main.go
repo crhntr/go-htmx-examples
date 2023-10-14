@@ -649,6 +649,8 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 		}
 
 		return append(stack, node), 1 + consumed, nil
+	case TokenRightParenthesis:
+		return nil, 0, fmt.Errorf("unexpected right parenthesis at expression offest %d", token.Index)
 	}
 
 	return nil, 0, nil
