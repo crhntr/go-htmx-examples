@@ -96,7 +96,7 @@ func Test_parse(t *testing.T) {
 		{
 			Name:       "factorial has higher president over subtraction",
 			Expression: "1 - 3!",
-			Result:     6,
+			Result:     -5,
 		},
 	} {
 		t.Run(tt.Name, func(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/crhntr/go-mysql-htmx
+module github.com/crhntr/go-htmx-examples
 
 go 1.21
 
