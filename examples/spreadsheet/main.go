@@ -313,11 +313,11 @@ func (table *Table) UnmarshalJSON(in []byte) error {
 	table.RowCount = encoded.RowCount
 	table.ColumnCount = encoded.ColumnCount
 	for _, cell := range encoded.Cells {
-		column, row, err := parseCellID(cell.ID, table.RowCount-1, table.ColumnCount-1)
+		column, row, err := parseCellID(cell.ID, table.ColumnCount-1, table.RowCount-1)
 		if err != nil {
 			return err
 		}
-		exp, err := newExpression(cell.Expression, table.RowCount-1, table.ColumnCount-1)
+		exp, err := newExpression(cell.Expression, table.ColumnCount-1, table.RowCount-1)
 		if err != nil {
 			return err
 		}
@@ -411,7 +411,7 @@ func (table *Table) calculateValues() error {
 
 var identifierPattern = regexp.MustCompile("(?P<column>[A-Z]+)(?P<row>[0-9]+)")
 
-func parseCellID(in string, maxRow, maxColumn int) (int, int, error) {
+func parseCellID(in string, maxColumn, maxRow int) (int, int, error) {
 	in = strings.TrimPrefix(in, "cell-")
 	if !identifierPattern.MatchString(in) {
 		return 0, 0, fmt.Errorf("unexpected identifier pattern expected something like A4")
@@ -586,12 +586,12 @@ func (node ParenNode) String() string {
 	return fmt.Sprintf("(%s)", node.Node)
 }
 
-func parse(tokens []Token, i, maxRow, maxColumn int) (ExpressionNode, int, error) {
+func parse(tokens []Token, i, maxColumn, maxRow int) (ExpressionNode, int, error) {
 	var (
 		stack []ExpressionNode
 	)
 	for {
-		result, consumed, err := parseNodes(stack, tokens, i, maxRow, maxColumn)
+		result, consumed, err := parseNodes(stack, tokens, i, maxColumn, maxRow)
 		if err != nil {
 			return nil, consumed + i, err
 		}
@@ -610,7 +610,7 @@ func parse(tokens []Token, i, maxRow, maxColumn int) (ExpressionNode, int, error
 	}
 }
 
-func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int) ([]ExpressionNode, int, error) {
+func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int) ([]ExpressionNode, int, error) {
 	if i >= len(tokens) {
 		return nil, i, nil
 	}
@@ -629,7 +629,7 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 		case "ROW", "COLUMN", "MAX_ROW", "MAX_COLUMN", "MIN_ROW", "MIN_COLUMN":
 			return append(stack, VariableNode{Identifier: token}), 1, nil
 		default:
-			column, row, err := parseCellID(token.Value, maxRow, maxColumn)
+			column, row, err := parseCellID(token.Value, maxColumn, maxRow)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -642,7 +642,7 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 		)
 		i += 1
 		for {
-			result, consumed, err := parseNodes(parenStack, tokens, i, maxRow, maxColumn)
+			result, consumed, err := parseNodes(parenStack, tokens, i, maxColumn, maxRow)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -700,7 +700,7 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 			stack = stack[:len(stack)-1]
 		}
 
-		rightExpression, consumed, err := parseNodes(nil, tokens, i+1, maxRow, maxColumn)
+		rightExpression, consumed, err := parseNodes(nil, tokens, i+1, maxColumn, maxRow)
 		if err != nil {
 			return nil, 1 + consumed, err
 		}
