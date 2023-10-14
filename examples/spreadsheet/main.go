@@ -744,7 +744,7 @@ func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode Express
 		case "ROW":
 			return cell.Row, nil
 		case "COLUMN":
-			return cell.Row, nil
+			return cell.Column, nil
 		case "MAX_ROW":
 			return table.RowCount - 1, nil
 		case "MAX_COLUMN":
