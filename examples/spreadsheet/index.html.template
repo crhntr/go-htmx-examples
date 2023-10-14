@@ -21,8 +21,8 @@
 
 <div class="container">
   {{block "table" .}}
-    <form hx-patch="/table" hx-swap="outerHTML">
-      <table id="table">
+    <form id="table" hx-patch="/table" hx-swap="outerHTML">
+      <table>
         <thead>
         <tr>
           <th></th>
