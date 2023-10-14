@@ -188,16 +188,16 @@ func (server *server) patchTable(res http.ResponseWriter, req *http.Request, par
 
 		cell := server.cellPointer(column, row)
 		cell.Error = ""
-		cell.ExpressionText = normalizeExpression(value[0])
+		cell.input = normalizeExpression(value[0])
 
 		var expression ExpressionNode
-		if cell.ExpressionText != "" {
-			expression, err = newExpression(cell.ExpressionText, server.table.ColumnCount-1, server.table.RowCount-1)
+		if cell.input != "" {
+			expression, err = newExpression(cell.input, server.table.ColumnCount-1, server.table.RowCount-1)
 			if err != nil {
 				cell.Error = err.Error()
 				continue
 			}
-			cell.ExpressionText = expression.String()
+			cell.input = expression.String()
 		}
 		cell.Expression = expression
 	}
@@ -283,8 +283,15 @@ type Cell struct {
 	Value,
 	SavedValue int
 
-	ExpressionText,
+	input,
 	Error string
+}
+
+func (cell Cell) ExpressionText() string {
+	if cell.Expression != nil && cell.Error == "" {
+		return cell.Expression.String()
+	}
+	return cell.input
 }
 
 type EncodedCell struct {
