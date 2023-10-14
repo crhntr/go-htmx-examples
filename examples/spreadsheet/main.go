@@ -502,7 +502,7 @@ func tokenize(input string) ([]Token, error) {
 			continue
 		} else if unicode.IsLetter(rune(input[i])) {
 			start := i
-			for i < len(input) && (unicode.IsLetter(rune(input[i])) || unicode.IsDigit(rune(input[i]))) {
+			for i < len(input) && (rune(input[i]) == '_' || unicode.IsLetter(rune(input[i])) || unicode.IsDigit(rune(input[i]))) {
 				i++
 			}
 			tokens = append(tokens, Token{Index: start, Type: TokenIdentifier, Value: input[start:i]})
@@ -615,7 +615,7 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 		return append(stack, IntegerNode{Token: token, Value: n}), 1, nil
 	case TokenIdentifier:
 		switch token.Value {
-		case "ROW", "COLUMN":
+		case "ROW", "COLUMN", "MAX_ROW", "MAX_COLUMN", "MIN_ROW", "MIN_COLUMN":
 			return append(stack, VariableNode{Identifier: token}), 1, nil
 		default:
 			column, row, err := parseCellID(token.Value, maxRow, maxColumn)
@@ -745,6 +745,12 @@ func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode Express
 			return cell.Row, nil
 		case "COLUMN":
 			return cell.Row, nil
+		case "MAX_ROW":
+			return table.RowCount - 1, nil
+		case "MAX_COLUMN":
+			return table.ColumnCount - 1, nil
+		case "MIN_ROW", "MIN_COLUMN":
+			return 0, nil
 		default:
 			return 0, fmt.Errorf("unknown variable %s", node.Identifier.Value)
 		}
