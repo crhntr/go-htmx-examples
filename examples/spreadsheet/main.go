@@ -665,6 +665,19 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 	case TokenExclamation:
 		top := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
+
+		if b, ok := top.(BinaryExpressionNode); ok {
+			if b.Op.BinaryOpLess(token) {
+				return append(stack, BinaryExpressionNode{
+					Op:   b.Op,
+					Left: b.Left,
+					Right: FactorialNode{
+						Expression: b.Right,
+					},
+				}), 1, nil
+			}
+		}
+
 		stack = append(stack, FactorialNode{
 			Expression: top,
 		})
