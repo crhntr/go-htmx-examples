@@ -94,8 +94,8 @@ func Test_parse(t *testing.T) {
 			Result:     98,
 		},
 		{
-			Name:       "division has higher president over subtraction",
-			Expression: "3!",
+			Name:       "factorial has higher president over subtraction",
+			Expression: "1 - 3!",
 			Result:     6,
 		},
 	} {
