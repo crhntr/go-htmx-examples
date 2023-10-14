@@ -48,7 +48,7 @@
 </html>
 
 {{define "view-cell"}}
-  <td class="cell" id="{{.ID}}" data-row-column="{{.Column}}" data-row-index="{{.Row}}" hx-get="/cell/{{.IDPathParam}}/edit" hx-swap="outerHTML">
+  <td class="cell" id="{{.ID}}" data-row-column="{{.Column}}" data-row-index="{{.Row}}" hx-get="/cell/{{.IDPathParam}}" hx-swap="outerHTML">
       {{- .String -}}
   </td>
 {{end}}

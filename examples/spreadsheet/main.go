@@ -62,7 +62,7 @@ func (server *server) routes() *httprouter.Router {
 
 	mux.GET("/", server.index)
 	mux.POST("/file", server.save)
-	mux.GET("/cell/:id/edit", server.getCellEdit)
+	mux.GET("/cell/:id", server.getCellEdit)
 	mux.PATCH("/cell/:id", server.patchCell)
 
 	return mux
