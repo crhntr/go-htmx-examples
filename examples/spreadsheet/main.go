@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -24,87 +25,40 @@ import (
 var indexHTMLTemplate string
 
 func main() {
-
-	var (
-		numericType           string
-		rowCount, columnCount = 20, 10
-	)
-	flag.StringVar(&numericType, "type", "int", "the numeric type")
-	flag.IntVar(&columnCount, "columns", columnCount, "the number of table columns")
-	flag.IntVar(&rowCount, "rows", rowCount, "the number of table rows")
+	table := Table{ColumnCount: 10, RowCount: 10}
+	flag.IntVar(&table.ColumnCount, "columns", table.ColumnCount, "the number of table columns")
+	flag.IntVar(&table.RowCount, "rows", table.RowCount, "the number of table rows")
 	flag.Parse()
 
-	mux := constructRouter(numericType, columnCount, rowCount)
-
-	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":8080", mux))
-}
-
-type Number interface {
-	~float32 | ~float64 |
-		~int | ~int64 | ~int32 | ~int16 | ~int8 |
-		~uint | ~uint64 | ~uint32 | ~uint16 | ~uint8
-}
-
-func newServer[N Number](columnCount, rowCount int, parseNumber func(string) (N, error)) *httprouter.Router {
-	table := Table[N]{ColumnCount: columnCount, RowCount: rowCount}
-	table.ParseNumber = parseNumber
-	s := server[N]{
+	fileName := "table.json"
+	if flag.NArg() > 0 {
+		fileName = flag.Arg(0)
+		tableJSON, err := os.ReadFile(fileName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err = json.Unmarshal(tableJSON, &table); err != nil {
+			log.Fatal(err)
+		}
+	}
+	s := server{
+		fileName:  fileName,
 		table:     table,
 		templates: template.Must(template.New("index.html.template").Parse(indexHTMLTemplate)),
 	}
-	return s.routes()
+	log.Println("starting server")
+	log.Fatal(http.ListenAndServe(":8080", s.routes()))
 }
 
-func constructRouter(numericTypeName string, columnCount, rowCount int) *httprouter.Router {
-	switch numericTypeName {
-	case "float32":
-		return newServer(columnCount, rowCount, func(in string) (float32, error) {
-			n, err := strconv.ParseFloat(in, 32)
-			return float32(n), err
-		})
-	case "float64":
-		return newServer(columnCount, rowCount, func(in string) (float64, error) {
-			return strconv.ParseFloat(in, 64)
-		})
-	case "int64":
-		return newServer(columnCount, rowCount, parseInt[int64])
-	case "int32":
-		return newServer(columnCount, rowCount, parseInt[int32])
-	case "int16":
-		return newServer(columnCount, rowCount, parseInt[int16])
-	case "int8":
-		return newServer(columnCount, rowCount, parseInt[int8])
-	case "uint":
-		return newServer(columnCount, rowCount, parseInt[uint])
-	case "uint64":
-		return newServer(columnCount, rowCount, parseInt[uint64])
-	case "uint32":
-		return newServer(columnCount, rowCount, parseInt[uint32])
-	case "uint16":
-		return newServer(columnCount, rowCount, parseInt[uint16])
-	case "uint8":
-		return newServer(columnCount, rowCount, parseInt[uint8])
-	case "int":
-		return newServer(columnCount, rowCount, strconv.Atoi)
-	default:
-		panic("unknown table number type")
-	}
-}
-
-func parseInt[T Number](s string) (T, error) {
-	n, err := strconv.Atoi(s)
-	return T(n), err
-}
-
-type server[N Number] struct {
-	table Table[N]
-	mut   sync.RWMutex
+type server struct {
+	table    Table
+	mut      sync.RWMutex
+	fileName string
 
 	templates *template.Template
 }
 
-func (server *server[N]) routes() *httprouter.Router {
+func (server *server) routes() *httprouter.Router {
 	mux := httprouter.New()
 
 	mux.GET("/", server.index)
@@ -116,7 +70,7 @@ func (server *server[N]) routes() *httprouter.Router {
 	return mux
 }
 
-func (server *server[N]) render(res http.ResponseWriter, _ *http.Request, name string, status int, data any) {
+func (server *server) render(res http.ResponseWriter, _ *http.Request, name string, status int, data any) {
 	var buf bytes.Buffer
 	if err := server.templates.ExecuteTemplate(&buf, name, data); err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -128,13 +82,13 @@ func (server *server[N]) render(res http.ResponseWriter, _ *http.Request, name s
 	_, _ = res.Write(buf.Bytes())
 }
 
-func (server *server[N]) index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 	server.render(res, req, "index.html.template", http.StatusOK, &server.table)
 }
 
-func (server *server[N]) getCellEdit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 
@@ -148,7 +102,7 @@ func (server *server[N]) getCellEdit(res http.ResponseWriter, req *http.Request,
 	server.render(res, req, "edit-cell", http.StatusOK, cell)
 }
 
-func (server *server[N]) getTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) getTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 
@@ -173,7 +127,7 @@ func (server *server[N]) getTableJSON(res http.ResponseWriter, req *http.Request
 	_, _ = res.Write(buf)
 }
 
-func (server *server[N]) postTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) postTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if err := req.ParseMultipartForm((1 << 10) * 10); err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -194,7 +148,7 @@ func (server *server[N]) postTableJSON(res http.ResponseWriter, req *http.Reques
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var table Table[N]
+	var table Table
 	if err = json.Unmarshal(tableJSON, &table); err != nil {
 		log.Fatal(err)
 	}
@@ -213,7 +167,7 @@ func closeAndIgnoreError(c io.Closer) {
 	_ = c.Close()
 }
 
-func (server *server[N]) patchTable(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (server *server) patchTable(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	server.mut.Lock()
 	defer server.mut.Unlock()
 
@@ -238,7 +192,7 @@ func (server *server[N]) patchTable(res http.ResponseWriter, req *http.Request, 
 
 		var expression ExpressionNode
 		if cell.input != "" {
-			expression, err = newExpression(cell.input, server.table.ColumnCount-1, server.table.RowCount-1, server.table.ParseNumber)
+			expression, err = newExpression(cell.input, server.table.ColumnCount-1, server.table.RowCount-1)
 			if err != nil {
 				cell.Error = err.Error()
 				continue
@@ -257,15 +211,15 @@ func (server *server[N]) patchTable(res http.ResponseWriter, req *http.Request, 
 	server.render(res, req, "table", http.StatusOK, &server.table)
 }
 
-func (server *server[N]) cellPointer(column, row int) *Cell[N] {
-	var cell *Cell[N]
-	index := slices.IndexFunc(server.table.Cells, func(cell Cell[N]) bool {
+func (server *server) cellPointer(column, row int) *Cell {
+	var cell *Cell
+	index := slices.IndexFunc(server.table.Cells, func(cell Cell) bool {
 		return cell.Row == row && cell.Column == column
 	})
 	if index >= 0 {
 		cell = &server.table.Cells[index]
 	} else {
-		server.table.Cells = append(server.table.Cells, Cell[N]{
+		server.table.Cells = append(server.table.Cells, Cell{
 			Row:    row,
 			Column: column,
 		})
@@ -312,20 +266,20 @@ func (row Row) Label() string {
 	return strconv.Itoa(row.Number)
 }
 
-type Cell[N Number] struct {
+type Cell struct {
 	Row    int
 	Column int
 
 	Expression,
 	SavedExpression ExpressionNode
 	Value,
-	SavedValue N
+	SavedValue int
 
 	input,
 	Error string
 }
 
-func (cell Cell[N]) ExpressionText() string {
+func (cell Cell) ExpressionText() string {
 	if cell.Expression != nil && cell.Error == "" {
 		return cell.Expression.String()
 	}
@@ -337,7 +291,7 @@ type EncodedCell struct {
 	Expression string `json:"ex"`
 }
 
-func (cell Cell[N]) MarshalJSON() ([]byte, error) {
+func (cell Cell) MarshalJSON() ([]byte, error) {
 	return json.Marshal(EncodedCell{
 		ID:         strings.TrimPrefix(cell.ID(), "cell-"),
 		Expression: cell.SavedExpression.String(),
@@ -350,7 +304,7 @@ type EncodedTable struct {
 	Cells       []EncodedCell `json:"cells"`
 }
 
-func (table *Table[N]) UnmarshalJSON(in []byte) error {
+func (table *Table) UnmarshalJSON(in []byte) error {
 	var encoded EncodedTable
 
 	if err := json.Unmarshal(in, &encoded); err != nil {
@@ -363,11 +317,11 @@ func (table *Table[N]) UnmarshalJSON(in []byte) error {
 		if err != nil {
 			return err
 		}
-		exp, err := newExpression(cell.Expression, table.RowCount-1, table.ColumnCount-1, table.ParseNumber)
+		exp, err := newExpression(cell.Expression, table.RowCount-1, table.ColumnCount-1)
 		if err != nil {
 			return err
 		}
-		table.Cells = append(table.Cells, Cell[N]{
+		table.Cells = append(table.Cells, Cell{
 			Column:          column,
 			Row:             row,
 			SavedExpression: exp,
@@ -378,49 +332,47 @@ func (table *Table[N]) UnmarshalJSON(in []byte) error {
 	return table.calculateValues()
 }
 
-func (cell Cell[N]) String() string {
+func (cell Cell) String() string {
 	if cell.SavedExpression == nil {
 		return ""
 	}
-	return fmt.Sprintf("%v", cell.Value)
+	return strconv.Itoa(cell.Value)
 }
 
-func (cell Cell[N]) IDPathParam() string {
+func (cell Cell) IDPathParam() string {
 	return fmt.Sprintf("%s%d", columnLabel(cell.Column), cell.Row)
 }
-func (cell Cell[N]) ID() string {
+func (cell Cell) ID() string {
 	return "cell-" + cell.IDPathParam()
 }
 
-type Table[N Number] struct {
-	ColumnCount int       `json:"columns"`
-	RowCount    int       `json:"rows"`
-	Cells       []Cell[N] `json:"cells"`
-
-	ParseNumber func(string) (N, error)
+type Table struct {
+	ColumnCount int    `json:"columns"`
+	RowCount    int    `json:"rows"`
+	Cells       []Cell `json:"cells"`
 }
 
-func NewTable[N Number](columns, rows int) Table[N] {
-	table := Table[N]{
+func NewTable(columns, rows int) Table {
+	table := Table{
 		RowCount:    rows,
 		ColumnCount: columns,
 	}
 	return table
 }
 
-func (table *Table[N]) Cell(column, row int) Cell[N] {
+func (table *Table) Cell(column, row int) Cell {
 	for _, cell := range table.Cells {
 		if cell.Row == row && cell.Column == column {
 			return cell
 		}
 	}
-	return Cell[N]{
+	return Cell{
 		Row:    row,
 		Column: column,
 	}
 }
 
-func (table *Table[N]) Rows() []Row {
+func (table *Table) Rows() []Row {
 	result := make([]Row, table.RowCount)
 	for i := range result {
 		result[i].Number = i
@@ -428,7 +380,7 @@ func (table *Table[N]) Rows() []Row {
 	return result
 }
 
-func (table *Table[N]) Columns() []Column {
+func (table *Table) Columns() []Column {
 	result := make([]Column, table.ColumnCount)
 	for i := range result {
 		result[i].Number = i
@@ -436,7 +388,7 @@ func (table *Table[N]) Columns() []Column {
 	return result
 }
 
-func (table *Table[N]) calculateValues() error {
+func (table *Table) calculateValues() error {
 	for _, cell := range table.Cells {
 		if cell.Error != "" {
 			return fmt.Errorf("cell parsing error %s", cell.IDPathParam())
@@ -480,14 +432,14 @@ func parseCellID(in string, maxRow, maxColumn int) (int, int, error) {
 	return column, row, nil
 }
 
-func (table *Table[N]) saveCellChanges() {
+func (table *Table) saveCellChanges() {
 	for i := range table.Cells {
 		table.Cells[i].SavedValue = table.Cells[i].Value
 		table.Cells[i].SavedExpression = table.Cells[i].Expression
 	}
 }
 
-func (table *Table[N]) revertCellChanges() {
+func (table *Table) revertCellChanges() {
 	for i := range table.Cells {
 		table.Cells[i].Value = table.Cells[i].SavedValue
 		table.Cells[i].Expression = table.Cells[i].SavedExpression
@@ -568,13 +520,13 @@ type ExpressionNode interface {
 	fmt.Stringer
 }
 
-func newExpression[N Number](in string, maxColumn, maxRow int, parseNumber func(string) (N, error)) (ExpressionNode, error) {
+func newExpression(in string, maxColumn, maxRow int) (ExpressionNode, error) {
 	expressionText := normalizeExpression(in)
 	tokens, err := tokenize(expressionText)
 	if err != nil {
 		return nil, err
 	}
-	expression, _, err := parse(tokens, 0, maxRow, maxColumn, parseNumber)
+	expression, _, err := parse(tokens, 0, maxRow, maxColumn)
 	if err != nil {
 		return nil, err
 	}
@@ -591,12 +543,12 @@ func (node IdentifierNode) String() string {
 	return node.Token.Value
 }
 
-type NumberNode[N Number] struct {
+type IntegerNode struct {
 	Token Token
-	Value N
+	Value int
 }
 
-func (node NumberNode[N]) String() string {
+func (node IntegerNode) String() string {
 	return node.Token.Value
 }
 
@@ -634,12 +586,12 @@ func (node ParenNode) String() string {
 	return fmt.Sprintf("(%s)", node.Node)
 }
 
-func parse[N Number](tokens []Token, i, maxRow, maxColumn int, parseNumber func(string) (N, error)) (ExpressionNode, int, error) {
+func parse(tokens []Token, i, maxRow, maxColumn int) (ExpressionNode, int, error) {
 	var (
 		stack []ExpressionNode
 	)
 	for {
-		result, consumed, err := parseNodes[N](stack, tokens, i, maxRow, maxColumn, parseNumber)
+		result, consumed, err := parseNodes(stack, tokens, i, maxRow, maxColumn)
 		if err != nil {
 			return nil, consumed + i, err
 		}
@@ -658,7 +610,7 @@ func parse[N Number](tokens []Token, i, maxRow, maxColumn int, parseNumber func(
 	}
 }
 
-func parseNodes[N Number](stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int, parseNumber func(in string) (N, error)) ([]ExpressionNode, int, error) {
+func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int) ([]ExpressionNode, int, error) {
 	if i >= len(tokens) {
 		return nil, i, nil
 	}
@@ -667,11 +619,11 @@ func parseNodes[N Number](stack []ExpressionNode, tokens []Token, i, maxRow, max
 
 	switch token.Type {
 	case TokenNumber:
-		n, err := parseNumber(token.Value)
+		n, err := strconv.Atoi(token.Value)
 		if err != nil {
 			return nil, 1, fmt.Errorf("failed to parse number  %s at expression offset %d: %w", token.Value, token.Index, err)
 		}
-		return append(stack, NumberNode[N]{Token: token, Value: n}), 1, nil
+		return append(stack, IntegerNode{Token: token, Value: n}), 1, nil
 	case TokenIdentifier:
 		switch token.Value {
 		case "ROW", "COLUMN", "MAX_ROW", "MAX_COLUMN", "MIN_ROW", "MIN_COLUMN":
@@ -690,7 +642,7 @@ func parseNodes[N Number](stack []ExpressionNode, tokens []Token, i, maxRow, max
 		)
 		i += 1
 		for {
-			result, consumed, err := parseNodes(parenStack, tokens, i, maxRow, maxColumn, parseNumber)
+			result, consumed, err := parseNodes(parenStack, tokens, i, maxRow, maxColumn)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -742,13 +694,13 @@ func parseNodes[N Number](stack []ExpressionNode, tokens []Token, i, maxRow, max
 			if token.Type != TokenSubtract {
 				return stack, 0, fmt.Errorf("binary expression for operator at index %d missing left hand side", token.Index)
 			}
-			node.Left = NumberNode[N]{Value: 0}
+			node.Left = IntegerNode{Value: 0}
 		} else {
 			node.Left = stack[len(stack)-1]
 			stack = stack[:len(stack)-1]
 		}
 
-		rightExpression, consumed, err := parseNodes(nil, tokens, i+1, maxRow, maxColumn, parseNumber)
+		rightExpression, consumed, err := parseNodes(nil, tokens, i+1, maxRow, maxColumn)
 		if err != nil {
 			return nil, 1 + consumed, err
 		}
@@ -789,7 +741,7 @@ type visit struct {
 
 type visitSet map[visit]struct{}
 
-func (cell *Cell[N]) evaluate(table *Table[N], visited visitSet) error {
+func (cell *Cell) evaluate(table *Table, visited visitSet) error {
 	v := visit{
 		colum: cell.Column,
 		row:   cell.Row,
@@ -811,26 +763,26 @@ func (cell *Cell[N]) evaluate(table *Table[N], visited visitSet) error {
 	return nil
 }
 
-func evaluate[N Number](table *Table[N], cell *Cell[N], visited visitSet, expressionNode ExpressionNode) (N, error) {
+func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode ExpressionNode) (int, error) {
 	switch node := expressionNode.(type) {
 	case IdentifierNode:
 		cell := table.Cell(node.Column, node.Row)
 		err := cell.evaluate(table, visited)
 		return cell.Value, err
-	case NumberNode[N]:
+	case IntegerNode:
 		return node.Value, nil
 	case ParenNode:
 		return evaluate(table, cell, visited, node.Node)
 	case VariableNode:
 		switch node.Identifier.Value {
 		case "ROW":
-			return N(cell.Row), nil
+			return cell.Row, nil
 		case "COLUMN":
-			return N(cell.Column), nil
+			return cell.Column, nil
 		case "MAX_ROW":
-			return N(table.RowCount) - 1, nil
+			return table.RowCount - 1, nil
 		case "MAX_COLUMN":
-			return N(table.ColumnCount) - 1, nil
+			return table.ColumnCount - 1, nil
 		case "MIN_ROW", "MIN_COLUMN":
 			return 0, nil
 		default:
@@ -840,6 +792,9 @@ func evaluate[N Number](table *Table[N], cell *Cell[N], visited visitSet, expres
 		n, err := evaluate(table, cell, visited, node.Expression)
 		if err != nil {
 			return 0, err
+		}
+		if n > 20 {
+			return 0, fmt.Errorf("n! where n > 20 is too large")
 		}
 		for i := n - 1; i >= 2; i-- {
 			n *= i
