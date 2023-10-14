@@ -136,8 +136,8 @@ func (server *server) save(res http.ResponseWriter, req *http.Request, _ httprou
 }
 
 func (server *server) patchCell(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	server.mut.RLock()
-	defer server.mut.RUnlock()
+	server.mut.Lock()
+	defer server.mut.Unlock()
 
 	if err := req.ParseForm(); err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
