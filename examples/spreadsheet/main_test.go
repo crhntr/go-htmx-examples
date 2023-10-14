@@ -93,6 +93,11 @@ func Test_parse(t *testing.T) {
 			Expression: "100 - 6 / 3",
 			Result:     98,
 		},
+		{
+			Name:       "division has higher president over subtraction",
+			Expression: "3!",
+			Result:     6,
+		},
 	} {
 		t.Run(tt.Name, func(t *testing.T) {
 			tokens, err := tokenize(tt.Expression)

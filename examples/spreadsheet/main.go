@@ -464,6 +464,7 @@ const (
 	TokenSubtract
 	TokenMultiply
 	TokenDivide
+	TokenExclamation
 	TokenLeftParenthesis
 	TokenRightParenthesis
 	TokenIdentifier
@@ -488,6 +489,8 @@ func tokenize(input string) ([]Token, error) {
 			i--
 		} else if c == '+' {
 			tokens = append(tokens, Token{Index: i, Type: TokenAdd, Value: "+"})
+		} else if c == '!' {
+			tokens = append(tokens, Token{Index: i, Type: TokenExclamation, Value: "!"})
 		} else if c == '-' {
 			tokens = append(tokens, Token{Index: i, Type: TokenSubtract, Value: "-"})
 		} else if c == '*' {
@@ -564,6 +567,14 @@ type VariableNode struct {
 
 func (node VariableNode) String() string {
 	return fmt.Sprintf("%s", node.Identifier.Value)
+}
+
+type FactorialNode struct {
+	Expression ExpressionNode
+}
+
+func (node FactorialNode) String() string {
+	return fmt.Sprintf("%s!", node.Expression)
 }
 
 type ParenNode struct {
@@ -651,6 +662,13 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 				Node: result[0],
 			}), totalConsumed + 1, nil
 		}
+	case TokenExclamation:
+		top := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		stack = append(stack, FactorialNode{
+			Expression: top,
+		})
+		return stack, 1, nil
 	case TokenAdd, TokenSubtract, TokenMultiply, TokenDivide:
 		node := BinaryExpressionNode{
 			Op: token,
@@ -754,6 +772,18 @@ func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode Express
 		default:
 			return 0, fmt.Errorf("unknown variable %s", node.Identifier.Value)
 		}
+	case FactorialNode:
+		n, err := evaluate(table, cell, visited, node.Expression)
+		if err != nil {
+			return 0, err
+		}
+		if n > 20 {
+			return 0, fmt.Errorf("n! where n > 20 is too large")
+		}
+		for i := n - 1; i >= 2; i-- {
+			n *= i
+		}
+		return n, nil
 	case BinaryExpressionNode:
 		leftResult, err := evaluate(table, cell, visited, node.Left)
 		if err != nil {
