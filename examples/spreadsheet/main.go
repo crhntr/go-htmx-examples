@@ -228,14 +228,6 @@ func (server *server) cellPointer(column, row int) *Cell {
 	return cell
 }
 
-type ErrorCellData struct {
-	Column, Row int
-	ID,
-	IDPathParam,
-	Expression,
-	Error string
-}
-
 func normalizeExpression(in string) string {
 	return strings.TrimSpace(strings.ToUpper(in))
 }
