@@ -511,7 +511,7 @@ func newExpression(in string, maxColumn, maxRow int) (ExpressionNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	expression, _, err := parse(tokens, 0, maxRow, maxColumn)
+	expression, _, err := parse(tokens, 0, maxColumn, maxRow)
 	if err != nil {
 		return nil, err
 	}
