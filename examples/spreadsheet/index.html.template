@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Spreadsheet</title>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <script src="https://unpkg.com/htmx.org@1.9.6"
+          integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+          crossorigin="anonymous"></script>
+
+  <style>
+    .cell {
+        min-width: 4rem;
+        background: lightcyan;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  {{block "table" .}}
+    <table>
+      <thead>
+      <tr>
+        <th></th>
+          {{range $column := $.Columns}}
+            <th>{{$column.Label}}</th>
+          {{end}}
+      </tr>
+      </thead>
+      <tbody id="tbody">
+      {{range $rowIndex, $row := $.Rows}}
+      <tr>
+        <td>{{$row.Label}}</td>
+          {{range $columnIndex, $column := $.Columns -}}
+              {{template "view-cell" ($.Cell $columnIndex $rowIndex)}}
+          {{- end}}
+      <tr>
+          {{end}}
+      </tbody>
+    </table>
+  {{end}}
+  <button hx-prompt="What would you name to name the saved table file?" hx-post="/file">Save</button>
+</div>
+</body>
+</html>
+
+{{define "view-cell"}}
+  <td class="cell" id="{{.ID}}" data-row-column="{{.Column}}" data-row-index="{{.Row}}" hx-get="/cell/edit?r={{.Row}}&c={{$.Column}}" hx-swap="outerHTML">
+      {{- .String -}}
+  </td>
+{{end}}
+
+{{define "edit-cell" -}}
+<td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
+  <form hx-patch="/cell?r={{.Row}}&c={{.Column}}" hx-target="closest table" hx-swap="outerHTML">
+    <input type="text" name="expression" value="{{.Expression}}" aria-label="expression">
+    <button type="submit">Update</button>
+  </form>
+</td>
+{{- end}}
+
+{{define "error-cell" -}}
+<td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
+  <form hx-patch="/cell?r={{.Row}}&c={{.Column}}" hx-target="closest table" hx-swap="outerHTML">
+    <input type="text" name="expression" value="{{.Expression}}" aria-label="expression">
+    <p style="color: red;">{{.Error}}</p>
+    <button type="submit">Update</button>
+  </form>
+</td>
+{{- end}}
