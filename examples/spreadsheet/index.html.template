@@ -21,7 +21,7 @@
 
 <div class="container">
   {{block "table" .}}
-    <table>
+    <table id="table">
       <thead>
       <tr>
         <th></th>
@@ -31,18 +31,27 @@
       </tr>
       </thead>
       <tbody id="tbody">
-      {{range $rowIndex, $row := $.Rows}}
-      <tr>
-        <td>{{$row.Label}}</td>
+      {{range $rowIndex, $row := $.Rows -}}
+        <tr>
+          <td>{{$row.Label}}</td>
           {{range $columnIndex, $column := $.Columns -}}
               {{template "view-cell" ($.Cell $columnIndex $rowIndex)}}
           {{- end}}
-      <tr>
-          {{end}}
+        <tr>
+      {{- end}}
       </tbody>
     </table>
   {{end}}
-  <button hx-prompt="What would you name to name the saved table file?" hx-post="/file">Save</button>
+  <a href="/table.json" download>Download</a>
+
+  <form hx-encoding='multipart/form-data' hx-post='/table.json'
+        _='on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100' hx-target="#table" hx-swap="outerHTML">
+    <input type='file' name='table.json'>
+    <button>
+      Upload
+    </button>
+    <progress id='progress' value='0' max='100'></progress>
+  </form>
 </div>
 </body>
 </html>

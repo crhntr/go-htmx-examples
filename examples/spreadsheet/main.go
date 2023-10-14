@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -61,7 +62,8 @@ func (server *server) routes() *httprouter.Router {
 	mux := httprouter.New()
 
 	mux.GET("/", server.index)
-	mux.POST("/file", server.save)
+	mux.GET("/table.json", server.getTableJSON)
+	mux.POST("/table.json", server.postTableJSON)
 	mux.GET("/cell/:id", server.getCellEdit)
 	mux.PATCH("/cell/:id", server.patchCell)
 
@@ -100,16 +102,9 @@ func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request, pa
 	server.render(res, req, "edit-cell", http.StatusOK, cell)
 }
 
-func (server *server) save(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) getTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
-	fileName := req.Header.Get("HX-Prompt")
-	if fileName == "" {
-		fileName = server.fileName
-	}
-	if !strings.HasSuffix(fileName, ".json") {
-		fileName += ".json"
-	}
 
 	filtered := server.table.Cells[:0]
 	for _, cell := range server.table.Cells {
@@ -125,12 +120,51 @@ func (server *server) save(res http.ResponseWriter, req *http.Request, _ httprou
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = os.WriteFile(fileName, buf, 0666)
+	h := res.Header()
+	h.Set("content-type", "application/json")
+	h.Set("content-length", strconv.Itoa(len(buf)))
+	res.WriteHeader(http.StatusOK)
+	_, _ = res.Write(buf)
+}
+
+func (server *server) postTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if err := req.ParseMultipartForm((1 << 10) * 10); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+	tableJSONHeaders, ok := req.MultipartForm.File["table.json"]
+	if !ok || len(tableJSONHeaders) == 0 {
+		http.Error(res, "expected table.json file", http.StatusBadRequest)
+		return
+	}
+	f, err := tableJSONHeaders[0].Open()
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	res.WriteHeader(http.StatusNoContent)
+	defer closeAndIgnoreError(f)
+	tableJSON, err := io.ReadAll(f)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var table Table
+	if err = json.Unmarshal(tableJSON, &table); err != nil {
+		log.Fatal(err)
+	}
+	if err := table.calculateValues(); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+	server.mut.Lock()
+	defer server.mut.Unlock()
+	server.table = table
+
+	server.render(res, req, "table", http.StatusOK, &server.table)
+}
+
+func closeAndIgnoreError(c io.Closer) {
+	_ = c.Close()
 }
 
 func (server *server) patchCell(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
