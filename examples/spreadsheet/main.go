@@ -663,6 +663,9 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 			}), totalConsumed + 1, nil
 		}
 	case TokenExclamation:
+		if len(stack) == 0 {
+			return nil, 0, fmt.Errorf("malformed factorial expression")
+		}
 		top := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 
