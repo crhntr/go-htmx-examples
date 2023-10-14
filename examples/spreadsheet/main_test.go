@@ -107,7 +107,9 @@ func Test_parse(t *testing.T) {
 			}
 			visited := make(visitSet)
 
-			value, err := evaluate(&table, visited, exp)
+			cell := Cell{Column: 0, Row: 0}
+
+			value, err := evaluate(&table, &cell, visited, exp)
 			if err != nil {
 				t.Fatal(err)
 			}

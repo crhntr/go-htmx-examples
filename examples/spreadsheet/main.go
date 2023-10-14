@@ -558,6 +558,14 @@ func (node BinaryExpressionNode) String() string {
 	return fmt.Sprintf("%s %s %s", node.Left.String(), node.Op.Value, node.Right.String())
 }
 
+type VariableNode struct {
+	Identifier Token
+}
+
+func (node VariableNode) String() string {
+	return fmt.Sprintf("%s", node.Identifier.Value)
+}
+
 type ParenNode struct {
 	Start, End Token
 	Node       ExpressionNode
@@ -606,11 +614,16 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxRow, maxColumn int
 		}
 		return append(stack, IntegerNode{Token: token, Value: n}), 1, nil
 	case TokenIdentifier:
-		column, row, err := parseCellID(token.Value, maxRow, maxColumn)
-		if err != nil {
-			return nil, 0, err
+		switch token.Value {
+		case "ROW", "COLUMN":
+			return append(stack, VariableNode{Identifier: token}), 1, nil
+		default:
+			column, row, err := parseCellID(token.Value, maxRow, maxColumn)
+			if err != nil {
+				return nil, 0, err
+			}
+			return append(stack, IdentifierNode{Token: token, Row: row, Column: column}), 1, nil
 		}
-		return append(stack, IdentifierNode{Token: token, Row: row, Column: column}), 1, nil
 	case TokenLeftParenthesis:
 		var (
 			totalConsumed = 1
@@ -708,7 +721,7 @@ func (cell *Cell) evaluate(table *Table, visited visitSet) error {
 		cell.Value = 0
 		return nil
 	}
-	result, err := evaluate(table, visited, cell.Expression)
+	result, err := evaluate(table, cell, visited, cell.Expression)
 	if err != nil {
 		return err
 	}
@@ -716,7 +729,7 @@ func (cell *Cell) evaluate(table *Table, visited visitSet) error {
 	return nil
 }
 
-func evaluate(table *Table, visited visitSet, expressionNode ExpressionNode) (int, error) {
+func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode ExpressionNode) (int, error) {
 	switch node := expressionNode.(type) {
 	case IdentifierNode:
 		cell := table.Cell(node.Column, node.Row)
@@ -725,13 +738,22 @@ func evaluate(table *Table, visited visitSet, expressionNode ExpressionNode) (in
 	case IntegerNode:
 		return node.Value, nil
 	case ParenNode:
-		return evaluate(table, visited, node.Node)
+		return evaluate(table, cell, visited, node.Node)
+	case VariableNode:
+		switch node.Identifier.Value {
+		case "ROW":
+			return cell.Row, nil
+		case "COLUMN":
+			return cell.Row, nil
+		default:
+			return 0, fmt.Errorf("unknown variable %s", node.Identifier.Value)
+		}
 	case BinaryExpressionNode:
-		leftResult, err := evaluate(table, visited, node.Left)
+		leftResult, err := evaluate(table, cell, visited, node.Left)
 		if err != nil {
 			return 0, err
 		}
-		rightResult, err := evaluate(table, visited, node.Right)
+		rightResult, err := evaluate(table, cell, visited, node.Right)
 		if err != nil {
 			return 0, err
 		}
