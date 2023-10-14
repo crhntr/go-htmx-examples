@@ -65,7 +65,7 @@ func (server *server) routes() *httprouter.Router {
 	mux.GET("/table.json", server.getTableJSON)
 	mux.POST("/table.json", server.postTableJSON)
 	mux.GET("/cell/:id", server.getCellEdit)
-	mux.PATCH("/cell/:id", server.patchCell)
+	mux.PATCH("/table", server.patchTable)
 
 	return mux
 }
@@ -167,7 +167,7 @@ func closeAndIgnoreError(c io.Closer) {
 	_ = c.Close()
 }
 
-func (server *server) patchCell(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (server *server) patchTable(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	server.mut.Lock()
 	defer server.mut.Unlock()
 
@@ -176,22 +176,42 @@ func (server *server) patchCell(res http.ResponseWriter, req *http.Request, para
 		return
 	}
 
-	column, row, err := parseCellID(params.ByName("id"), server.table.ColumnCount-1, server.table.RowCount-1)
+	for key, value := range req.Form {
+		if !strings.HasPrefix(key, "cell-") {
+			continue
+		}
+		column, row, err := parseCellID(key, server.table.ColumnCount-1, server.table.RowCount-1)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		cell := server.cellPointer(column, row)
+		cell.Error = ""
+		cell.ExpressionText = normalizeExpression(value[0])
+
+		var expression ExpressionNode
+		if cell.ExpressionText != "" {
+			expression, err = newExpression(cell.ExpressionText, server.table.ColumnCount-1, server.table.RowCount-1)
+			if err != nil {
+				cell.Error = err.Error()
+				continue
+			}
+			cell.ExpressionText = expression.String()
+		}
+		cell.Expression = expression
+	}
+
+	err := server.table.calculateValues()
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+		server.render(res, req, "table", http.StatusOK, &server.table)
 		return
 	}
 
-	expressionText := normalizeExpression(req.Form.Get("expression"))
-	var expression ExpressionNode
-	if expressionText != "" {
-		expression, err = newExpression(expressionText, server.table.ColumnCount-1, server.table.RowCount-1)
-		if err != nil {
-			server.writeErrorCell(res, req, row, column, expressionText, err)
-			return
-		}
-	}
+	server.render(res, req, "table", http.StatusOK, &server.table)
+}
 
+func (server *server) cellPointer(column, row int) *Cell {
 	var cell *Cell
 	index := slices.IndexFunc(server.table.Cells, func(cell Cell) bool {
 		return cell.Row == row && cell.Column == column
@@ -205,30 +225,7 @@ func (server *server) patchCell(res http.ResponseWriter, req *http.Request, para
 		})
 		cell = &server.table.Cells[len(server.table.Cells)-1]
 	}
-
-	cell.Expression = expression
-
-	err = server.table.calculateValues()
-	if err != nil {
-		server.writeErrorCell(res, req, row, column, expressionText, err)
-		return
-	}
-
-	server.render(res, req, "table", http.StatusOK, &server.table)
-}
-
-func (server *server) writeErrorCell(res http.ResponseWriter, req *http.Request, row, column int, expressionText string, err error) {
-	h := res.Header()
-	cell := Cell{Row: row, Column: column}
-	h.Set("HX-Retarget", "#"+cell.ID())
-	server.render(res, req, "error-cell", http.StatusOK, ErrorCellData{
-		ID:          cell.ID(),
-		Row:         row,
-		Column:      column,
-		Expression:  expressionText,
-		IDPathParam: cell.IDPathParam(),
-		Error:       err.Error(),
-	})
+	return cell
 }
 
 type ErrorCellData struct {
@@ -285,6 +282,9 @@ type Cell struct {
 	SavedExpression ExpressionNode
 	Value,
 	SavedValue int
+
+	ExpressionText,
+	Error string
 }
 
 type EncodedCell struct {
@@ -390,13 +390,21 @@ func (table *Table) Columns() []Column {
 }
 
 func (table *Table) calculateValues() error {
+	for _, cell := range table.Cells {
+		if cell.Error != "" {
+			return fmt.Errorf("cell parsing error %s", cell.IDPathParam())
+		}
+	}
 	for i := range table.Cells {
 		visited := make(visitSet)
-		err := (&table.Cells[i]).evaluate(table, visited)
+		cell := &table.Cells[i]
+		err := cell.evaluate(table, visited)
 		if err != nil {
+			cell.Error = err.Error()
 			table.revertCellChanges()
 			return err
 		}
+		cell.Error = ""
 	}
 	table.saveCellChanges()
 	return nil

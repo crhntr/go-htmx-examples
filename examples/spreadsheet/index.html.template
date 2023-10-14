@@ -21,26 +21,29 @@
 
 <div class="container">
   {{block "table" .}}
-    <table id="table">
-      <thead>
-      <tr>
-        <th></th>
-          {{range $column := $.Columns}}
-            <th>{{$column.Label}}</th>
-          {{end}}
-      </tr>
-      </thead>
-      <tbody id="tbody">
-      {{range $rowIndex, $row := $.Rows -}}
+    <form hx-patch="/table" hx-swap="outerHTML">
+      <table id="table">
+        <thead>
+        <tr>
+          <th></th>
+            {{range $column := $.Columns}}
+              <th>{{$column.Label}}</th>
+            {{end}}
+        </tr>
+        </thead>
+        <tbody id="tbody">
+        {{range $rowIndex, $row := $.Rows -}}
         <tr>
           <td>{{$row.Label}}</td>
-          {{range $columnIndex, $column := $.Columns -}}
-              {{template "view-cell" ($.Cell $columnIndex $rowIndex)}}
-          {{- end}}
-        <tr>
-      {{- end}}
-      </tbody>
-    </table>
+            {{range $columnIndex, $column := $.Columns -}}
+                {{template "view-cell" ($.Cell $columnIndex $rowIndex)}}
+            {{- end}}
+        </tr>
+            {{- end}}
+        </tbody>
+      </table>
+      <button type="submit">Submit</button>
+    </form>
   {{end}}
   <a href="/table.json" download>Download</a>
 
@@ -56,27 +59,22 @@
 </body>
 </html>
 
-{{define "view-cell"}}
-  <td class="cell" id="{{.ID}}" data-row-column="{{.Column}}" data-row-index="{{.Row}}" hx-get="/cell/{{.IDPathParam}}" hx-swap="outerHTML">
-      {{- .String -}}
+{{define "edit-cell" -}}
+  <td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
+    <input type="text" name="{{.ID}}" value="{{.ExpressionText}}" aria-label="expression for cell {{.IDPathParam}}">
+      {{if .Error}}
+        <p style="color: red;">{{.Error}}</p>
+      {{end}}
   </td>
+{{- end}}
+
+{{define "view-cell"}}
+  {{if not .Error -}}
+    <td class="cell" id="{{.ID}}" data-row-column="{{.Column}}" data-row-index="{{.Row}}" hx-get="/cell/{{.IDPathParam}}" hx-swap="outerHTML">
+        {{- .String -}}
+    </td>
+  {{- else -}}
+    {{template "edit-cell" .}}
+  {{- end -}}
 {{end}}
 
-{{define "edit-cell" -}}
-<td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
-  <form hx-patch="/cell/{{.IDPathParam}}" hx-target="closest table" hx-swap="outerHTML">
-    <input type="text" name="expression" value="{{.Expression}}" aria-label="expression">
-    <button type="submit">Update</button>
-  </form>
-</td>
-{{- end}}
-
-{{define "error-cell" -}}
-<td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
-  <form hx-patch="/cell/{{.IDPathParam}}" hx-target="closest table" hx-swap="outerHTML">
-    <input type="text" name="expression" value="{{.Expression}}" aria-label="expression">
-    <p style="color: red;">{{.Error}}</p>
-    <button type="submit">Update</button>
-  </form>
-</td>
-{{- end}}
