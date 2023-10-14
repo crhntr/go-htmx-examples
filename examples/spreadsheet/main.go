@@ -10,7 +10,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -29,20 +28,7 @@ func main() {
 	flag.IntVar(&table.ColumnCount, "columns", table.ColumnCount, "the number of table columns")
 	flag.IntVar(&table.RowCount, "rows", table.RowCount, "the number of table rows")
 	flag.Parse()
-
-	fileName := "table.json"
-	if flag.NArg() > 0 {
-		fileName = flag.Arg(0)
-		tableJSON, err := os.ReadFile(fileName)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err = json.Unmarshal(tableJSON, &table); err != nil {
-			log.Fatal(err)
-		}
-	}
 	s := server{
-		fileName:  fileName,
 		table:     table,
 		templates: template.Must(template.New("index.html.template").Parse(indexHTMLTemplate)),
 	}
@@ -51,9 +37,8 @@ func main() {
 }
 
 type server struct {
-	table    Table
-	mut      sync.RWMutex
-	fileName string
+	table Table
+	mut   sync.RWMutex
 
 	templates *template.Template
 }
@@ -102,7 +87,7 @@ func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request, pa
 	server.render(res, req, "edit-cell", http.StatusOK, cell)
 }
 
-func (server *server) getTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) getTableJSON(res http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 
@@ -167,7 +152,7 @@ func closeAndIgnoreError(c io.Closer) {
 	_ = c.Close()
 }
 
-func (server *server) patchTable(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (server *server) patchTable(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	server.mut.Lock()
 	defer server.mut.Unlock()
 
@@ -279,7 +264,7 @@ type Cell struct {
 	Error string
 }
 
-func (cell Cell) ExpressionText() string {
+func (cell *Cell) ExpressionText() string {
 	if cell.Expression != nil && cell.Error == "" {
 		return cell.Expression.String()
 	}
@@ -291,7 +276,7 @@ type EncodedCell struct {
 	Expression string `json:"ex"`
 }
 
-func (cell Cell) MarshalJSON() ([]byte, error) {
+func (cell *Cell) MarshalJSON() ([]byte, error) {
 	return json.Marshal(EncodedCell{
 		ID:         strings.TrimPrefix(cell.ID(), "cell-"),
 		Expression: cell.SavedExpression.String(),
@@ -332,17 +317,17 @@ func (table *Table) UnmarshalJSON(in []byte) error {
 	return table.calculateValues()
 }
 
-func (cell Cell) String() string {
+func (cell *Cell) String() string {
 	if cell.SavedExpression == nil {
 		return ""
 	}
 	return strconv.Itoa(cell.Value)
 }
 
-func (cell Cell) IDPathParam() string {
+func (cell *Cell) IDPathParam() string {
 	return fmt.Sprintf("%s%d", columnLabel(cell.Column), cell.Row)
 }
-func (cell Cell) ID() string {
+func (cell *Cell) ID() string {
 	return "cell-" + cell.IDPathParam()
 }
 
@@ -360,13 +345,13 @@ func NewTable(columns, rows int) Table {
 	return table
 }
 
-func (table *Table) Cell(column, row int) Cell {
-	for _, cell := range table.Cells {
+func (table *Table) Cell(column, row int) *Cell {
+	for i, cell := range table.Cells {
 		if cell.Row == row && cell.Column == column {
-			return cell
+			return &table.Cells[i]
 		}
 	}
-	return Cell{
+	return &Cell{
 		Row:    row,
 		Column: column,
 	}
