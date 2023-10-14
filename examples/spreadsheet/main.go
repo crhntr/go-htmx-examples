@@ -109,7 +109,20 @@ func (server *server) save(res http.ResponseWriter, req *http.Request, _ httprou
 	if fileName == "" {
 		fileName = server.fileName
 	}
-	buf, err := json.Marshal(server.table)
+	if !strings.HasSuffix(fileName, ".json") {
+		fileName += ".json"
+	}
+
+	filtered := server.table.Cells[:0]
+	for _, cell := range server.table.Cells {
+		if cell.SavedExpression == nil || cell.Expression == nil {
+			continue
+		}
+		filtered = append(filtered, cell)
+	}
+	server.table.Cells = filtered
+
+	buf, err := json.MarshalIndent(server.table, "", "\t")
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -119,7 +132,7 @@ func (server *server) save(res http.ResponseWriter, req *http.Request, _ httprou
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	res.WriteHeader(http.StatusAccepted)
+	res.WriteHeader(http.StatusNoContent)
 }
 
 func (server *server) patchCell(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
@@ -259,7 +272,7 @@ type EncodedCell struct {
 
 func (cell Cell) MarshalJSON() ([]byte, error) {
 	return json.Marshal(EncodedCell{
-		ID:         cell.ID(),
+		ID:         strings.TrimPrefix(cell.ID(), "cell-"),
 		Expression: cell.SavedExpression.String(),
 	})
 }
@@ -367,6 +380,7 @@ func (table *Table) calculateValues() error {
 var identifierPattern = regexp.MustCompile("(?P<column>[A-Z]+)(?P<row>[0-9]+)")
 
 func parseCellID(in string, maxRow, maxColumn int) (int, int, error) {
+	in = strings.TrimPrefix(in, "cell-")
 	if !identifierPattern.MatchString(in) {
 		return 0, 0, fmt.Errorf("unexpected identifier pattern expected something like A4")
 	}
