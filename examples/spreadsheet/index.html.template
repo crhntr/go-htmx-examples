@@ -48,14 +48,14 @@
 </html>
 
 {{define "view-cell"}}
-  <td class="cell" id="{{.ID}}" data-row-column="{{.Column}}" data-row-index="{{.Row}}" hx-get="/cell/edit?r={{.Row}}&c={{$.Column}}" hx-swap="outerHTML">
+  <td class="cell" id="{{.ID}}" data-row-column="{{.Column}}" data-row-index="{{.Row}}" hx-get="/cell/{{.IDPathParam}}/edit" hx-swap="outerHTML">
       {{- .String -}}
   </td>
 {{end}}
 
 {{define "edit-cell" -}}
 <td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
-  <form hx-patch="/cell?r={{.Row}}&c={{.Column}}" hx-target="closest table" hx-swap="outerHTML">
+  <form hx-patch="/cell/{{.IDPathParam}}" hx-target="closest table" hx-swap="outerHTML">
     <input type="text" name="expression" value="{{.Expression}}" aria-label="expression">
     <button type="submit">Update</button>
   </form>
@@ -64,7 +64,7 @@
 
 {{define "error-cell" -}}
 <td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
-  <form hx-patch="/cell?r={{.Row}}&c={{.Column}}" hx-target="closest table" hx-swap="outerHTML">
+  <form hx-patch="/cell/{{.IDPathParam}}" hx-target="closest table" hx-swap="outerHTML">
     <input type="text" name="expression" value="{{.Expression}}" aria-label="expression">
     <p style="color: red;">{{.Error}}</p>
     <button type="submit">Update</button>

@@ -4,13 +4,11 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"slices"
@@ -64,8 +62,8 @@ func (server *server) routes() *httprouter.Router {
 
 	mux.GET("/", server.index)
 	mux.POST("/file", server.save)
-	mux.GET("/cell/edit", server.getCellEdit)
-	mux.PATCH("/cell", server.patchCell)
+	mux.GET("/cell/:id/edit", server.getCellEdit)
+	mux.PATCH("/cell/:id", server.patchCell)
 
 	return mux
 }
@@ -88,11 +86,11 @@ func (server *server) index(res http.ResponseWriter, req *http.Request, _ httpro
 	server.render(res, req, "index.html.template", http.StatusOK, &server.table)
 }
 
-func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 
-	row, column, err := parseRowAndColumnFromQuery(req.URL.Query())
+	column, row, err := parseCellID(params.ByName("id"), server.table.ColumnCount-1, server.table.RowCount-1)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -135,7 +133,7 @@ func (server *server) save(res http.ResponseWriter, req *http.Request, _ httprou
 	res.WriteHeader(http.StatusNoContent)
 }
 
-func (server *server) patchCell(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) patchCell(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	server.mut.Lock()
 	defer server.mut.Unlock()
 
@@ -144,7 +142,7 @@ func (server *server) patchCell(res http.ResponseWriter, req *http.Request, _ ht
 		return
 	}
 
-	row, column, err := parseRowAndColumnFromQuery(req.Form)
+	column, row, err := parseCellID(params.ByName("id"), server.table.ColumnCount-1, server.table.RowCount-1)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -187,38 +185,28 @@ func (server *server) patchCell(res http.ResponseWriter, req *http.Request, _ ht
 
 func (server *server) writeErrorCell(res http.ResponseWriter, req *http.Request, row, column int, expressionText string, err error) {
 	h := res.Header()
-	h.Set("HX-Retarget", "#"+Cell{Row: row, Column: column}.ID())
+	cell := Cell{Row: row, Column: column}
+	h.Set("HX-Retarget", "#"+cell.ID())
 	server.render(res, req, "error-cell", http.StatusOK, ErrorCellData{
-		ID:         Cell{Row: row, Column: column}.ID(),
-		Row:        row,
-		Column:     column,
-		Expression: expressionText,
-		Error:      err.Error(),
+		ID:          cell.ID(),
+		Row:         row,
+		Column:      column,
+		Expression:  expressionText,
+		IDPathParam: cell.IDPathParam(),
+		Error:       err.Error(),
 	})
 }
 
 type ErrorCellData struct {
 	Column, Row int
 	ID,
+	IDPathParam,
 	Expression,
 	Error string
 }
 
 func normalizeExpression(in string) string {
 	return strings.TrimSpace(strings.ToUpper(in))
-}
-
-func parseRowAndColumnFromQuery(values url.Values) (int, int, error) {
-	var err error
-	row, rowErr := strconv.Atoi(values.Get("r"))
-	if err != nil {
-		err = rowErr
-	}
-	column, columnErr := strconv.Atoi(values.Get("c"))
-	if err != nil {
-		err = errors.Join(err, columnErr)
-	}
-	return row, column, err
 }
 
 type Column struct {
@@ -318,8 +306,11 @@ func (cell Cell) String() string {
 	return strconv.Itoa(cell.Value)
 }
 
+func (cell Cell) IDPathParam() string {
+	return fmt.Sprintf("%s%d", columnLabel(cell.Column), cell.Row)
+}
 func (cell Cell) ID() string {
-	return fmt.Sprintf("cell-%s%d", columnLabel(cell.Column), cell.Row)
+	return "cell-" + cell.IDPathParam()
 }
 
 type Table struct {
