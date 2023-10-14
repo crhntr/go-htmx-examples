@@ -138,10 +138,13 @@ func (server *server) patchCell(res http.ResponseWriter, req *http.Request, _ ht
 	}
 
 	expressionText := normalizeExpression(req.Form.Get("expression"))
-	expression, err := newExpression(expressionText, server.table.ColumnCount-1, server.table.RowCount-1)
-	if err != nil {
-		server.writeErrorCell(res, req, row, column, expressionText, err)
-		return
+	var expression ExpressionNode
+	if expressionText != "" {
+		expression, err = newExpression(expressionText, server.table.ColumnCount-1, server.table.RowCount-1)
+		if err != nil {
+			server.writeErrorCell(res, req, row, column, expressionText, err)
+			return
+		}
 	}
 
 	var cell *Cell
@@ -654,6 +657,7 @@ func (cell *Cell) evaluate(table *Table, visited visitSet) error {
 	}
 	visited[v] = struct{}{}
 	if cell.Expression == nil {
+		cell.Value = 0
 		return nil
 	}
 	result, err := evaluate(table, visited, cell.Expression)
