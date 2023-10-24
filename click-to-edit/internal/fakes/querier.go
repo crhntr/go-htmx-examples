@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/crhntr/go-mysql-htmx/examples/click-to-edit/internal/database"
+	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/database"
 )
 
 type Querier struct {

@@ -18,8 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/html"
 
-	"github.com/crhntr/go-mysql-htmx/examples/click-to-edit/internal/database"
-	"github.com/crhntr/go-mysql-htmx/examples/click-to-edit/internal/fakes"
+	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/database"
+	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/fakes"
 )
 
 func TestIndexLinks(t *testing.T) {

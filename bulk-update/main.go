@@ -15,7 +15,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/crhntr/go-mysql-htmx/examples/bulk-update/internal/database"
+	"github.com/crhntr/go-htmx-examples/bulk-update/internal/database"
 )
 
 //go:generate sqlc generate

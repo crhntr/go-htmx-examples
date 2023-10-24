@@ -17,11 +17,11 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/crhntr/go-mysql-htmx/examples/click-to-edit/internal/database"
+	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/database"
 )
 
 //go:generate sqlc generate
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//go:generate counterfeiter -generate
 
 //counterfeiter:generate -o internal/fakes --fake-name Querier internal/database Querier
 
