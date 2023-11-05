@@ -1,11 +1,9 @@
 # Example Webapps using [Go](https://go.dev) and [HTMX](https://htmx.org)
 
-I am also using [Pico CSS](https://picocss.com) and [SQLite3+SQLC](https://docs.sqlc.dev/en/latest/tutorials/getting-started-sqlite.html).
-
 ## Examples
 
 This table is a summary of stuff used in the various examples.
-| Example       | HTMX Attributes *                               | State Management | Router                              |
+| Example       | HTMX Attributes (everything uses hx-target)     | State Management | Router                              |
 |---------------|-------------------------------------------------|------------------|-------------------------------------|
 | bulk-update   | hx-include, hx-put                              | sqlc             | github.com/julienschmidt/httprouter |
 | click-to-edit | hx-boost, hx-swap                               | sqlc             | github.com/julienschmidt/httprouter |
@@ -13,7 +11,8 @@ This table is a summary of stuff used in the various examples.
 | delete-row    | hx-confirm, hx-delete, hx-swap                  | json, in-memory  | net/html                            |
 | edit-row      | hx-get, hx-include, hx-post, hx-swap            | json, in-memory  | github.com/julienschmidt/httprouter |
 | spreadsheet   | hx-encoding, hx-get, hx-patch, hx-post, hx-swap | json, in-memory  | github.com/julienschmidt/httprouter |
-* everything uses:  hx-target
+
+* I am also using [Pico CSS](https://picocss.com) in some examples.
 
 ## Generation
 
