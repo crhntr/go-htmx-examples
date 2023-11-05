@@ -1,0 +1,67 @@
+{{- define "edit-rows"}}
+  <thead>
+    <tr>
+      <th id="name-label">Name</th>
+      <th>Email</th>
+    </tr>
+  </thead>
+  {{range $index, $row := .Rows -}}
+  <tbody>
+    {{if ne $.EditedIndex $index -}}
+    <tr>
+      <td>{{$row.Name}}</td>
+      <td>{{$row.Email}}</td>
+    </tr>
+    {{- else -}}
+    <tr>
+      <td>
+        <input aria-label="Name" name="name" id="name" value="{{.Name}}">
+      </td>
+      <td>
+        <input aria-label="Email" name="email" id="email" value="{{.Email}}">
+      </td>
+      <td>
+        <button hx-post="/edit/{{$index}}" hx-include="closest tr">Submit</button>
+      </td>
+    </tr>
+    {{- end}}
+  </tbody>
+  {{- end}}
+{{end -}}
+
+{{- define "display-rows"}}
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Email</th>
+    <th></th>
+  </tr>
+  </thead>
+  {{range $index, $row := .Rows -}}
+    <tbody>
+    <tr hx-get="/edit/{{$index}}" hx-trigger="click">
+      <td>{{$row.Name}}</td>
+      <td>{{$row.Email}}</td>
+      <td>
+        <button hx-get="/edit/{{$index}}">Edit</button>
+      </td>
+    </tr>
+    </tbody>
+  {{- end}}
+{{end -}}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Edit Row</title>
+  <meta charset="UTF-8" />
+  <script src="https://unpkg.com/htmx.org@1.9.6"
+          integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+  <table hx-target="this" hx-swap="innerHTML">
+    {{template "display-rows" .}}
+  </table>
+</body>
+</html>
