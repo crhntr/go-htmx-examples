@@ -5,14 +5,14 @@ I am also using [Pico CSS](https://picocss.com) and [SQLite3+SQLC](https://docs.
 ## Examples
 
 This table is a summary of stuff used in the various examples.
-| Example       | Router                              | HTMX Attributes *                               | State Management |
-|---------------|-------------------------------------|-------------------------------------------------|------------------|
-| bulk-update   | github.com/julienschmidt/httprouter | hx-include, hx-put                              | sqlc             |
-| click-to-edit | github.com/julienschmidt/httprouter | hx-boost, hx-swap                               | sqlc             |
-| click-to-load | net/html                            | hx-get, hx-swap                                 | json  in-memory  |
-| delete-row    | net/html                            | hx-confirm, hx-delete, hx-swap                  | json, in-memory  |
-| edit-row      | github.com/julienschmidt/httprouter | hx-get, hx-include, hx-post, hx-swap            | json, in-memory  |
-| spreadsheet   | github.com/julienschmidt/httprouter | hx-encoding, hx-get, hx-patch, hx-post, hx-swap | json, in-memory  |
+| Example       | HTMX Attributes *                               | State Management | Router                              |
+|---------------|-------------------------------------------------|------------------|-------------------------------------|
+| bulk-update   | hx-include, hx-put                              | sqlc             | github.com/julienschmidt/httprouter |
+| click-to-edit | hx-boost, hx-swap                               | sqlc             | github.com/julienschmidt/httprouter |
+| click-to-load | hx-get, hx-swap                                 | json  in-memory  | net/html                            |
+| delete-row    | hx-confirm, hx-delete, hx-swap                  | json, in-memory  | net/html                            |
+| edit-row      | hx-get, hx-include, hx-post, hx-swap            | json, in-memory  | github.com/julienschmidt/httprouter |
+| spreadsheet   | hx-encoding, hx-get, hx-patch, hx-post, hx-swap | json, in-memory  | github.com/julienschmidt/httprouter |
 * everything uses:  hx-target
 
 ## Generation
