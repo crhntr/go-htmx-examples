@@ -38,7 +38,7 @@
   </tr>
   </thead>
   {{range $index, $row := .Rows -}}
-    <tbody>
+  <tbody>
     <tr>
       <td>{{$row.Name}}</td>
       <td>{{$row.Email}}</td>
@@ -46,7 +46,7 @@
         <button hx-get="/edit/{{$index}}">Edit</button>
       </td>
     </tr>
-    </tbody>
+  </tbody>
   {{- end}}
 {{end -}}
 
