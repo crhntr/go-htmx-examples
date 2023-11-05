@@ -39,7 +39,7 @@
   </thead>
   {{range $index, $row := .Rows -}}
     <tbody>
-    <tr hx-get="/edit/{{$index}}" hx-trigger="click">
+    <tr>
       <td>{{$row.Name}}</td>
       <td>{{$row.Email}}</td>
       <td>
