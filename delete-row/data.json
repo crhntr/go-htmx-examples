@@ -1,0 +1,19 @@
+[
+  {"Emoji": "🍇", "Name": "grape"},
+  {"Emoji": "🍈", "Name": "melon"},
+  {"Emoji": "🍉", "Name": "watermelon"},
+  {"Emoji": "🍊", "Name": "orange"},
+  {"Emoji": "🍋", "Name": "lemon"},
+  {"Emoji": "🍌", "Name": "banana"},
+  {"Emoji": "🍍", "Name": "pineapple"},
+  {"Emoji": "🥭", "Name": "mango"},
+  {"Emoji": "🍎", "Name": "red apple"},
+  {"Emoji": "🍏", "Name": "green apple"},
+  {"Emoji": "🍐", "Name": "pear"},
+  {"Emoji": "🍒", "Name": "cherry"},
+  {"Emoji": "🍑", "Name": "peach"},
+  {"Emoji": "🍓", "Name": "strawberry"},
+  {"Emoji": "🥝", "Name": "kiwi"},
+  {"Emoji": "🫐", "Name": "blueberry"},
+  {"Emoji": "🥥", "Name": "coconut"}
+]
