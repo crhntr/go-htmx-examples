@@ -1,6 +1,6 @@
 # Example Webapps using [Go](https://go.dev) and [HTMX](https://htmx.org)
 
-## Examples
+## Usage Summary
 
 This table is a summary of stuff used in the various examples.
 | Example       | HTMX Attributes (everything uses hx-target)     | State Management | Router                              |
