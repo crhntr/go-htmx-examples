@@ -16,9 +16,8 @@ func main() {
 }
 
 func indexHandler(res http.ResponseWriter, _ *http.Request) {
-	res.WriteHeader(http.StatusOK)
 	// language=html
-	_, _ = io.WriteString(res, `<!DOCTYPE html>
+	indexHTML := `<!DOCTYPE html>
 <html lang="en">
 <head>
   <title>Lazy Loading</title>
@@ -33,7 +32,9 @@ func indexHandler(res http.ResponseWriter, _ *http.Request) {
 	  </div>
 	</div>
 </body>
-</html`)
+</html>`
+	res.WriteHeader(http.StatusOK)
+	_, _ = io.WriteString(res, indexHTML)
 }
 
 func endpointHandler(res http.ResponseWriter, req *http.Request) {
