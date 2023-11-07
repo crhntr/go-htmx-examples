@@ -31,18 +31,9 @@ func main() {
 </html`)
 	})
 	mux.HandleFunc("/endpoint", func(res http.ResponseWriter, req *http.Request) {
-		q := req.URL.Query()
-		sleep := time.Second * 3
-		if in := q.Get("sleep"); in != "" {
-			var err error
-			sleep, err = time.ParseDuration(in)
-			if err != nil {
-				http.Error(res, err.Error(), http.StatusBadRequest)
-				return
-			}
-			if sleep > time.Minute {
-				sleep = time.Minute
-			}
+		sleep, ok := parseSleepQueryParameter(res, req)
+		if !ok {
+			return
 		}
 		time.Sleep(sleep)
 		res.WriteHeader(http.StatusOK)
@@ -50,4 +41,23 @@ func main() {
 		_, _ = io.WriteString(res, fmt.Sprintf(`<div>Waited %s.</div>`, sleep))
 	})
 	log.Fatal(http.ListenAndServe(":8080", mux))
+}
+
+func parseSleepQueryParameter(res http.ResponseWriter, req *http.Request) (time.Duration, bool) {
+	const defaultValue = time.Second * 3
+	q := req.URL.Query()
+	in := q.Get("sleep")
+	if in == "" {
+		return defaultValue, true
+	}
+	result, err := time.ParseDuration(in)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return 0, false
+	}
+	if result > time.Minute || result < 0 {
+		http.Error(res, "sleep duration out of accepted range", http.StatusBadRequest)
+		return 0, false
+	}
+	return result, true
 }
