@@ -10,10 +10,15 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		res.WriteHeader(http.StatusOK)
-		// language=html
-		_, _ = io.WriteString(res, `<!DOCTYPE html>
+	mux.HandleFunc("/", indexHandler)
+	mux.HandleFunc("/endpoint", endpointHandler)
+	log.Fatal(http.ListenAndServe(":8080", mux))
+}
+
+func indexHandler(res http.ResponseWriter, _ *http.Request) {
+	res.WriteHeader(http.StatusOK)
+	// language=html
+	_, _ = io.WriteString(res, `<!DOCTYPE html>
 <html lang="en">
 <head>
   <title>Lazy Loading</title>
@@ -29,18 +34,17 @@ func main() {
 	</div>
 </body>
 </html`)
-	})
-	mux.HandleFunc("/endpoint", func(res http.ResponseWriter, req *http.Request) {
-		sleep, ok := parseSleepQueryParameter(res, req)
-		if !ok {
-			return
-		}
-		time.Sleep(sleep)
-		res.WriteHeader(http.StatusOK)
-		// language=html
-		_, _ = io.WriteString(res, fmt.Sprintf(`<div>Waited %s.</div>`, sleep))
-	})
-	log.Fatal(http.ListenAndServe(":8080", mux))
+}
+
+func endpointHandler(res http.ResponseWriter, req *http.Request) {
+	sleep, ok := parseSleepQueryParameter(res, req)
+	if !ok {
+		return
+	}
+	time.Sleep(sleep)
+	res.WriteHeader(http.StatusOK)
+	// language=html
+	_, _ = io.WriteString(res, fmt.Sprintf(`<div>Waited %s.</div>`, sleep))
 }
 
 func parseSleepQueryParameter(res http.ResponseWriter, req *http.Request) (time.Duration, bool) {
