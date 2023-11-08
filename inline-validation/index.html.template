@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Inline Validation</title>
+  <meta charset="UTF-8" />
+  <script src="https://unpkg.com/htmx.org@1.9.8/dist/htmx.js"
+          crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.8/dist/ext/sse.js"
+          crossorigin="anonymous"></script>
+  <style>
+	  .error-message {
+		  color:red;
+	  }
+	  .error input {
+		  box-shadow: 0 0 3px #CC0000;
+	  }
+	  .valid input {
+		  box-shadow: 0 0 3px #36cc00;
+	  }
+  </style>
+</head>
+<body>
+<h3>Parse Duration</h3>
+<form hx-post="/counter">
+  {{define "duration"}}
+  <div hx-target="this" hx-swap="outerHTML">
+    <label>Wait
+      <input name="duration" type="text" hx-post="/counter/duration"
+             value="{{.Value}}"
+             class="{{if .Error}}error{{else}}valid{{end}}">
+      <small id="duration-error" class="error-message">
+        {{- with $err := .Error}}{{$err}}{{end -}}
+      </small>
+    </label>
+  </div>
+  {{end}}
+  {{define "step"}}
+  <div hx-target="this" hx-swap="outerHTML">
+    <label>Step
+      <input name="step" type="number" hx-post="/counter/step"
+             value="{{.Value}}"
+             class="{{if .Error}}error{{else}}valid{{end}}">
+      <small id="step-error" class="error-message">
+        {{- with $err := .Error}}{{$err}}{{end -}}
+      </small>
+    </label>
+  </div>
+  {{end}}
+  {{block "counter-configuration" .}}
+    {{template "duration" .Duration}}
+    {{template "step" .Step}}
+    <button class="btn btn-default" type="submit">Reset Counter</button>
+  {{end}}
+</form>
+<div hx-ext="sse" sse-connect="/count" sse-swap="message">{{.N}}</div>
+</body>
+</html>
