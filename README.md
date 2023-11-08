@@ -11,7 +11,7 @@ This table is a summary of stuff used in the various examples.
 | delete-row         | hx-confirm, hx-delete, hx-swap, hx-target                     | json, in-memory  | net/html                            |
 | edit-row           | hx-get, hx-include, hx-post, hx-swap, hx-target               | json, in-memory  | github.com/julienschmidt/httprouter |
 | lazy-loading       | hx-get, hx-trigger                                            | N/A              | net/html                            |
-| inline-validation  | hx-post, hx-swap, hx-targer, hx-trigger, sse-connect sse-swap | in-memory        | net/html                            |
+| inline-validation  | hx-post, hx-swap, hx-target, hx-trigger, sse-connect sse-swap | in-memory        | net/html                            |
 | spreadsheet        | hx-encoding, hx-get, hx-patch, hx-post, hx-swap, hx-trigger   | json, in-memory  | github.com/julienschmidt/httprouter |
 
 * I am also using [Pico CSS](https://picocss.com) in some examples.
