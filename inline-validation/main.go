@@ -152,6 +152,7 @@ func main() {
 		case state := <-c:
 			data.Step.Value = state.Step
 			data.Duration.Value = state.Duration
+			data.N = state.N
 		}
 		render(res, req, templates, http.StatusOK, "index", data)
 	})
