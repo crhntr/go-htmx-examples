@@ -1,0 +1,33 @@
+{{- /* gotype:github.com/crhntr/go-htmx-examples/delete-row.Page*/ -}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Infinite Scroll</title>
+  <meta charset="UTF-8" />
+  <script src="https://unpkg.com/htmx.org@1.9.6"
+          integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{block "rows" . }}
+        {{range $index, $row := .Rows -}}
+        <tr {{if lastIndex (len $.Rows) $index }}
+            hx-get="{{$.NextURL}}"
+            hx-trigger="revealed"
+            hx-swap="afterend"
+            {{end}}>
+          <td>{{.ID}}</td>
+        </tr>
+        {{end}}
+      {{end}}
+    </tbody>
+  </table>
+</body>
+</html>
