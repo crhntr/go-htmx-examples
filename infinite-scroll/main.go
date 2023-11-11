@@ -23,9 +23,10 @@ func main() {
 	}).Parse(indexHTMLTemplate))
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		const initialID = 1
 		render(res, templates, Page{
-			Rows:    setIDs(1, make([]Contact, rowsPerPage)),
-			NextURL: "/contacts?page=2",
+			Rows:    setIDs(initialID, make([]Contact, rowsPerPage)),
+			NextURL: contactsURL(initialID),
 		})
 	})
 	mux.HandleFunc("/contacts", func(res http.ResponseWriter, req *http.Request) {
@@ -35,10 +36,14 @@ func main() {
 		}
 		render(res, templates.Lookup("rows"), Page{
 			Rows:    setIDs(page, make([]Contact, rowsPerPage)),
-			NextURL: fmt.Sprintf("/contacts?page=%d", page+1),
+			NextURL: contactsURL(page + 1),
 		})
 	})
 	log.Fatal(http.ListenAndServe(":8080", mux))
+}
+
+func contactsURL(page int) string {
+	return fmt.Sprintf("/contacts?page=%d", page)
 }
 
 func render(res http.ResponseWriter, t *template.Template, data any) {
