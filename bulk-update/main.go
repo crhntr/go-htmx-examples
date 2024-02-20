@@ -11,8 +11,6 @@ import (
 	"strconv"
 
 	"github.com/crhntr/httplog"
-	"github.com/julienschmidt/httprouter"
-
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/crhntr/go-htmx-examples/bulk-update/internal/database"
@@ -53,14 +51,14 @@ type Server struct {
 }
 
 func (server *Server) routes() http.Handler {
-	mux := httprouter.New()
-	mux.GET("/", server.index)
-	mux.PUT("/activate", server.activate)
-	mux.PUT("/deactivate", server.deactivate)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", server.index)
+	mux.HandleFunc("PUT /activate", server.activate)
+	mux.HandleFunc("PUT /deactivate", server.deactivate)
 	return mux
 }
 
-func (server *Server) index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *Server) index(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	colors, err := server.db.ListColors(ctx)
 	if err != nil {
@@ -70,11 +68,11 @@ func (server *Server) index(res http.ResponseWriter, req *http.Request, _ httpro
 	server.writePage(res, req, "index.html.template", http.StatusOK, colors)
 }
 
-func (server *Server) activate(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *Server) activate(res http.ResponseWriter, req *http.Request) {
 	server.setActiveStatus(res, req, true)
 }
 
-func (server *Server) deactivate(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *Server) deactivate(res http.ResponseWriter, req *http.Request) {
 	server.setActiveStatus(res, req, false)
 }
 

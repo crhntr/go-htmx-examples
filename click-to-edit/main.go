@@ -13,8 +13,6 @@ import (
 	"strconv"
 
 	"github.com/crhntr/httplog"
-	"github.com/julienschmidt/httprouter"
-
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/database"
@@ -63,12 +61,12 @@ func newServer(db database.Querier) *Server {
 	return server
 }
 
-func (server *Server) routes() http.Handler {
-	mux := httprouter.New()
-	mux.GET("/", server.index)
-	mux.GET("/contact/:id", server.handleContactID(server.view))
-	mux.GET("/contact/:id/edit", server.handleContactID(server.edit))
-	mux.POST("/contact/:id", server.handleContactID(server.submit))
+func (server *Server) routes() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", server.index)
+	mux.HandleFunc("GET /contact/{id}", server.handleContactID(server.view))
+	mux.HandleFunc("GET /contact/{id}/edit", server.handleContactID(server.edit))
+	mux.HandleFunc("POST /contact/{id}", server.handleContactID(server.submit))
 	return mux
 }
 
@@ -84,7 +82,7 @@ func (server *Server) execute(name string, data any) (template.HTML, error) {
 	return template.HTML(buf.String()), err
 }
 
-func (server *Server) index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *Server) index(res http.ResponseWriter, req *http.Request) {
 	contacts, err := server.db.ListContacts(req.Context())
 	if err != nil {
 		server.writeError(res, err)
@@ -93,9 +91,9 @@ func (server *Server) index(res http.ResponseWriter, req *http.Request, _ httpro
 	server.writePage(res, req, "list-contacts", http.StatusOK, contacts)
 }
 
-func (server *Server) handleContactID(next func(http.ResponseWriter, *http.Request, int64)) httprouter.Handle {
-	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		id, err := strconv.Atoi(params.ByName("id"))
+func (server *Server) handleContactID(next func(http.ResponseWriter, *http.Request, int64)) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		id, err := strconv.Atoi(req.PathValue("id"))
 		if err != nil {
 			server.writeError(res, StatusError{
 				Status: http.StatusBadRequest,

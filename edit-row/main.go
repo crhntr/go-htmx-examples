@@ -11,8 +11,6 @@ import (
 	"slices"
 	"strconv"
 	"sync"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 var (
@@ -24,15 +22,15 @@ var (
 )
 
 func main() {
-	mux := httprouter.New()
+	mux := http.NewServeMux()
 	server := new(server)
 	server.templates = template.Must(template.New("index.html").Parse(indexHTMLTemplate))
 	if err := json.Unmarshal(dataJSON, &server.Rows); err != nil {
 		log.Fatal(err)
 	}
-	mux.GET("/", server.index)
-	mux.GET("/edit/:index", server.getEdit)
-	mux.POST("/edit/:index", server.postEdit)
+	mux.HandleFunc("GET /", server.index)
+	mux.HandleFunc("GET /edit/{index}", server.getEdit)
+	mux.HandleFunc("POST /edit/{index}", server.postEdit)
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
@@ -68,7 +66,7 @@ func (server *server) render(res http.ResponseWriter, _ *http.Request, templateN
 	_, _ = res.Write(buf.Bytes())
 }
 
-func (server *server) index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) index(res http.ResponseWriter, req *http.Request) {
 	server.render(res, req, "index.html", struct {
 		Rows []Row
 	}{
@@ -76,8 +74,8 @@ func (server *server) index(res http.ResponseWriter, req *http.Request, _ httpro
 	})
 }
 
-func (server *server) getEdit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-	index, err := strconv.Atoi(params.ByName("index"))
+func (server *server) getEdit(res http.ResponseWriter, req *http.Request) {
+	index, err := strconv.Atoi(req.PathValue("index"))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -94,8 +92,8 @@ func (server *server) getEdit(res http.ResponseWriter, req *http.Request, params
 	})
 }
 
-func (server *server) postEdit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-	index, err := strconv.Atoi(params.ByName("index"))
+func (server *server) postEdit(res http.ResponseWriter, req *http.Request) {
+	index, err := strconv.Atoi(req.PathValue("index"))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return

@@ -1,6 +1,6 @@
 # Spreadsheet
 
-<img width="598" alt="Screenshot 2023-10-14 at 12 40 38 PM" src="https://github.com/crhntr/go-htmx-examples/assets/8398225/1948e132-ae54-426b-b087-9dce1e634935">
+<img width="598" alt="Screenshot 2023-10-14" src="https://github.com/crhntr/go-htmx-examples/assets/8398225/1948e132-ae54-426b-b087-9dce1e634935">
 
 This is an integer only spreadsheet.
 

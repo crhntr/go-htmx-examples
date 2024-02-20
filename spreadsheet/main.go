@@ -16,8 +16,6 @@ import (
 	"strings"
 	"sync"
 	"unicode"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 //go:embed index.html.template
@@ -43,14 +41,14 @@ type server struct {
 	templates *template.Template
 }
 
-func (server *server) routes() *httprouter.Router {
-	mux := httprouter.New()
+func (server *server) routes() *http.ServeMux {
+	mux := http.NewServeMux()
 
-	mux.GET("/", server.index)
-	mux.GET("/table.json", server.getTableJSON)
-	mux.POST("/table.json", server.postTableJSON)
-	mux.GET("/cell/:id", server.getCellEdit)
-	mux.PATCH("/table", server.patchTable)
+	mux.HandleFunc("GET /", server.index)
+	mux.HandleFunc("GET /table.json", server.getTableJSON)
+	mux.HandleFunc("POST /table.json", server.postTableJSON)
+	mux.HandleFunc("GET /cell/{id}", server.getCellEdit)
+	mux.HandleFunc("PATCH /table", server.patchTable)
 
 	return mux
 }
@@ -67,17 +65,17 @@ func (server *server) render(res http.ResponseWriter, _ *http.Request, name stri
 	_, _ = res.Write(buf.Bytes())
 }
 
-func (server *server) index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) index(res http.ResponseWriter, req *http.Request) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 	server.render(res, req, "index.html.template", http.StatusOK, &server.table)
 }
 
-func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 
-	column, row, err := parseCellID(params.ByName("id"), server.table.ColumnCount-1, server.table.RowCount-1)
+	column, row, err := parseCellID(req.PathValue("id"), server.table.ColumnCount-1, server.table.RowCount-1)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -87,7 +85,7 @@ func (server *server) getCellEdit(res http.ResponseWriter, req *http.Request, pa
 	server.render(res, req, "edit-cell", http.StatusOK, cell)
 }
 
-func (server *server) getTableJSON(res http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+func (server *server) getTableJSON(res http.ResponseWriter, _ *http.Request) {
 	server.mut.RLock()
 	defer server.mut.RUnlock()
 
@@ -112,7 +110,7 @@ func (server *server) getTableJSON(res http.ResponseWriter, _ *http.Request, _ h
 	_, _ = res.Write(buf)
 }
 
-func (server *server) postTableJSON(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) postTableJSON(res http.ResponseWriter, req *http.Request) {
 	if err := req.ParseMultipartForm((1 << 10) * 10); err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
@@ -152,7 +150,7 @@ func closeAndIgnoreError(c io.Closer) {
 	_ = c.Close()
 }
 
-func (server *server) patchTable(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (server *server) patchTable(res http.ResponseWriter, req *http.Request) {
 	server.mut.Lock()
 	defer server.mut.Unlock()
 

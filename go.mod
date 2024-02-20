@@ -1,15 +1,14 @@
 module github.com/crhntr/go-htmx-examples
 
-go 1.21
+go 1.22
 
 require (
 	github.com/crhntr/dom v0.1.0-alpha.1
 	github.com/crhntr/httplog v1.0.0
 	github.com/crhntr/sse v0.0.0-20230222033640-901761132b28
-	github.com/julienschmidt/httprouter v1.3.0
-	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/net v0.17.0
+	golang.org/x/net v0.21.0
 )
 
 require (
