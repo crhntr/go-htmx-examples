@@ -61,7 +61,7 @@
 
 {{define "edit-cell" -}}
   <td class="cell" id="{{.ID}}" data-column-index="{{.Column}}" data-row-index="{{.Row}}" >
-    <input type="text" name="{{.ID}}" value="{{.ExpressionText}}" aria-label="expression for cell {{.IDPathParam}}">
+    <input type="text" name="{{.ID}}" value="{{.ExpressionText}}" aria-label="expression for cell {{.IDPathParam}}" autofocus>
       {{if .Error}}
         <p style="color: red;">{{.Error}}</p>
       {{end}}
