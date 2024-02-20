@@ -449,6 +449,7 @@ const (
 	TokenSubtract
 	TokenMultiply
 	TokenDivide
+	TokenExponent
 	TokenExclamation
 	TokenLeftParenthesis
 	TokenRightParenthesis
@@ -482,6 +483,8 @@ func tokenize(input string) ([]Token, error) {
 			tokens = append(tokens, Token{Index: i, Type: TokenMultiply, Value: "*"})
 		} else if c == '/' {
 			tokens = append(tokens, Token{Index: i, Type: TokenDivide, Value: "/"})
+		} else if c == '^' {
+			tokens = append(tokens, Token{Index: i, Type: TokenExponent, Value: "^"})
 		} else if c == '(' {
 			tokens = append(tokens, Token{Index: i, Type: TokenLeftParenthesis, Value: "("})
 		} else if c == ')' {
@@ -670,7 +673,7 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 			Expression: top,
 		})
 		return stack, 1, nil
-	case TokenAdd, TokenSubtract, TokenMultiply, TokenDivide:
+	case TokenAdd, TokenSubtract, TokenMultiply, TokenDivide, TokenExponent:
 		node := BinaryExpressionNode{
 			Op: token,
 		}
@@ -801,6 +804,12 @@ func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode Express
 			return leftResult - rightResult, nil
 		case TokenMultiply:
 			return leftResult * rightResult, nil
+		case TokenExponent:
+			res := 1
+			for i := 0; i < rightResult; i++ {
+				res *= leftResult
+			}
+			return res, nil
 		case TokenDivide:
 			if rightResult == 0 {
 				return 0, fmt.Errorf("could not divide by zero")
