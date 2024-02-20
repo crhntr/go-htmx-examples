@@ -3,7 +3,7 @@ module github.com/crhntr/go-htmx-examples
 go 1.22
 
 require (
-	github.com/crhntr/dom v0.1.0-alpha.1
+	github.com/crhntr/dom v0.1.0-alpha.4
 	github.com/crhntr/httplog v1.0.0
 	github.com/crhntr/sse v0.0.0-20230222033640-901761132b28
 	github.com/mattn/go-sqlite3 v1.14.22

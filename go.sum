@@ -2,6 +2,8 @@ github.com/andybalholm/cascadia v1.3.2 h1:3Xi6Dw5lHF15JtdcmAHD3i1+T8plmv7BQ/nsVi
 github.com/andybalholm/cascadia v1.3.2/go.mod h1:7gtRlve5FxPPgIgX36uWBX58OdBsSS6lUvCFb+h7KvU=
 github.com/crhntr/dom v0.1.0-alpha.1 h1:e8LRJngxWArOIQd2WjN72xnbz8FDBpv8r42xM8etpeM=
 github.com/crhntr/dom v0.1.0-alpha.1/go.mod h1:O7/q/tQYMNKq9eqFWw7/czYIY/Y0WaqXYJ0JSCnFJF0=
+github.com/crhntr/dom v0.1.0-alpha.4 h1:9UdCX/Y02c8vP5Eih3Kt2GXKeiNPSbm9A4xTnvUTSgQ=
+github.com/crhntr/dom v0.1.0-alpha.4/go.mod h1:w92nrANNMgPoeoCF7rJ127GIBvsnGhxky34+KVAZuCw=
 github.com/crhntr/httplog v1.0.0 h1:CtnQoqe8RKPR1My8bXRJ2tWcJVBa1QfesFeNoI8hfa8=
 github.com/crhntr/httplog v1.0.0/go.mod h1:nVjp8iphIwbLetOZPkHGgSUqNsbz1ZvU68JZXBzJfjU=
 github.com/crhntr/sse v0.0.0-20230222033640-901761132b28 h1:8+KFbn//zkEO+OhjFr9SwpzvMNEDMakDWUGHz4Nize8=

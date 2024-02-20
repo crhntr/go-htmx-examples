@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,10 +11,8 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/crhntr/dom"
-	"github.com/crhntr/dom/domx"
+	"github.com/crhntr/dom/domtest"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/html"
 
 	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/database"
 	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/fakes"
@@ -40,16 +36,14 @@ func TestIndexLinks(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
-	document := node.(dom.Document)
+	document := domtest.Response(t, res)
 
 	contactsLinks := document.QuerySelectorAll("ul li a[href]")
 	assert.Equal(t, 2, contactsLinks.Length())
 	assert.True(t, strings.Contains(contactsLinks.Item(0).TextContent(), "first1 last1"))
 	assert.True(t, strings.Contains(contactsLinks.Item(1).TextContent(), "first2 last2"))
-	assert.Equal(t, "/contact/5", contactsLinks.Item(0).(dom.Element).GetAttribute("href"))
-	assert.Equal(t, "/contact/6", contactsLinks.Item(1).(dom.Element).GetAttribute("href"))
+	assert.Equal(t, "/contact/5", contactsLinks.Item(0).GetAttribute("href"))
+	assert.Equal(t, "/contact/6", contactsLinks.Item(1).GetAttribute("href"))
 }
 
 func TestIndexError(t *testing.T) {
@@ -83,8 +77,7 @@ func TestViewContact(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestViewContactInvalidID(t *testing.T) {
@@ -125,8 +118,7 @@ func TestEditContact(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestViewContactNotFound(t *testing.T) {
@@ -142,8 +134,7 @@ func TestViewContactNotFound(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusNotFound, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestEditContactNotFound(t *testing.T) {
@@ -159,8 +150,7 @@ func TestEditContactNotFound(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusNotFound, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestSubmitContact(t *testing.T) {
@@ -193,8 +183,7 @@ func TestSubmitContact(t *testing.T) {
 	assert.Equal(t, "orange", query.LastName)
 	assert.Equal(t, "cara.orange@example.com", query.Email)
 
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestSubmitContactError(t *testing.T) {
@@ -217,8 +206,7 @@ func TestSubmitContactError(t *testing.T) {
 	assert.Zero(t, db.ContactWithIDCallCount())
 
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestSubmitContactUpdateFails(t *testing.T) {
@@ -242,8 +230,7 @@ func TestSubmitContactUpdateFails(t *testing.T) {
 	assert.Zero(t, db.ContactWithIDCallCount())
 
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestSubmitContactGetFails(t *testing.T) {
@@ -265,8 +252,7 @@ func TestSubmitContactGetFails(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func TestSubmitContactParseFails(t *testing.T) {
@@ -286,8 +272,7 @@ func TestSubmitContactParseFails(t *testing.T) {
 	assert.Zero(t, db.UpdateContactCallCount())
 
 	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
-	node := parseResponseNode(t, res)
-	assert.IsType(t, &domx.Document{}, node)
+	_ = domtest.Response(t, res)
 }
 
 func Test_write_full_page_missing_page(t *testing.T) {
@@ -320,13 +305,4 @@ func Test_must(t *testing.T) {
 	assert.NotPanics(t, func() {
 		assert.Equal(t, 5, must(5, nil))
 	})
-}
-
-func parseResponseNode(t *testing.T, res *http.Response) dom.Node {
-	t.Helper()
-	body, err := io.ReadAll(res.Body)
-	assert.NoError(t, err)
-	node, err := html.Parse(bytes.NewReader(body))
-	assert.NoError(t, err)
-	return domx.NewNode(node)
 }
