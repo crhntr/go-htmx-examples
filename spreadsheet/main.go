@@ -612,7 +612,7 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 		return append(stack, IntegerNode{Token: token, Value: n}), 1, nil
 	case TokenIdentifier:
 		switch token.Value {
-		case "ROW", "COLUMN", "MAX_ROW", "MAX_COLUMN", "MIN_ROW", "MIN_COLUMN":
+		case RowIdent, ColumnIdent, MaxRowIdent, MaxColumnIdent, MinRowIdent, MinColumnIdent:
 			return append(stack, VariableNode{Identifier: token}), 1, nil
 		default:
 			column, row, err := parseCellID(token.Value, maxColumn, maxRow)
@@ -749,6 +749,15 @@ func (cell *Cell) evaluate(table *Table, visited visitSet) error {
 	return nil
 }
 
+const (
+	RowIdent       = "ROW"
+	ColumnIdent    = "COLUMN"
+	MaxRowIdent    = "MAX_ROW"
+	MaxColumnIdent = "MAX_COLUMN"
+	MinRowIdent    = "MIN_ROW"
+	MinColumnIdent = "MIN_COLUMN"
+)
+
 func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode ExpressionNode) (int, error) {
 	switch node := expressionNode.(type) {
 	case IdentifierNode:
@@ -761,15 +770,15 @@ func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode Express
 		return evaluate(table, cell, visited, node.Node)
 	case VariableNode:
 		switch node.Identifier.Value {
-		case "ROW":
+		case RowIdent:
 			return cell.Row, nil
-		case "COLUMN":
+		case ColumnIdent:
 			return cell.Column, nil
-		case "MAX_ROW":
+		case MaxRowIdent:
 			return table.RowCount - 1, nil
-		case "MAX_COLUMN":
+		case MaxColumnIdent:
 			return table.ColumnCount - 1, nil
-		case "MIN_ROW", "MIN_COLUMN":
+		case MinRowIdent, MinColumnIdent:
 			return 0, nil
 		default:
 			return 0, fmt.Errorf("unknown variable %s", node.Identifier.Value)
