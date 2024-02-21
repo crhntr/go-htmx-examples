@@ -12,10 +12,10 @@ import (
 	"testing/iotest"
 
 	"github.com/crhntr/dom/domtest"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/database"
 	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/fakes"
+	"github.com/crhntr/go-htmx-examples/internal/assert"
 )
 
 func TestIndexLinks(t *testing.T) {
