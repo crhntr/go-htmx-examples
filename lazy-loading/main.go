@@ -21,8 +21,8 @@ func indexHandler(res http.ResponseWriter, _ *http.Request) {
 <html lang="en">
 <head>
   <title>Lazy Loading</title>
-  <script src="https://unpkg.com/htmx.org@1.9.6"
-          integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+  <script src="https://unpkg.com/htmx.org@2.0.0"
+          integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw"
           crossorigin="anonymous"></script>
 </head>
 <body>

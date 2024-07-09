@@ -46,8 +46,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="Click to edit example" />
 
-  <script src="https://unpkg.com/htmx.org@1.9.6"
-          integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+  <script src="https://unpkg.com/htmx.org@2.0.0"
+          integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw"
           crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css"
         integrity="sha384-JnI9fsy7u0hXe2CXur8V8MkHfeqi2q7x6KYi4DbEYIjZJuP2Z2eMlp2RbdO7p3zL"
