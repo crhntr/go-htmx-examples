@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	_ "embed"
 	"encoding/json"
 	"flag"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -31,7 +33,7 @@ func main() {
 		templates: template.Must(template.New("index.html.template").Parse(indexHTMLTemplate)),
 	}
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":8080", s.routes()))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), s.routes()))
 }
 
 type server struct {
@@ -325,6 +327,7 @@ func (cell *Cell) String() string {
 func (cell *Cell) IDPathParam() string {
 	return fmt.Sprintf("%s%d", columnLabel(cell.Column), cell.Row)
 }
+
 func (cell *Cell) ID() string {
 	return "cell-" + cell.IDPathParam()
 }
@@ -573,9 +576,7 @@ func (node ParenNode) String() string {
 }
 
 func parse(tokens []Token, i, maxColumn, maxRow int) (ExpressionNode, int, error) {
-	var (
-		stack []ExpressionNode
-	)
+	var stack []ExpressionNode
 	for {
 		result, consumed, err := parseNodes(stack, tokens, i, maxColumn, maxRow)
 		if err != nil {

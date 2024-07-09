@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	_ "embed"
 	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"slices"
 	"strconv"
@@ -59,7 +61,7 @@ func main() {
 		res.WriteHeader(http.StatusOK)
 		_, _ = res.Write(buf.Bytes())
 	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), nil))
 }
 
 type Page struct {

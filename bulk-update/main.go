@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"database/sql"
 	"embed"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/crhntr/httplog"
@@ -35,7 +37,7 @@ func main() {
 	mux := server.routes()
 	h := httplog.Wrap(mux)
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":8080", h))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), h))
 }
 
 func must[T any](value T, err error) T {
@@ -98,9 +100,7 @@ func (server *Server) setActiveStatus(res http.ResponseWriter, req *http.Request
 }
 
 func (server *Server) writePage(res http.ResponseWriter, _ *http.Request, name string, status int, data any) {
-	var (
-		buf bytes.Buffer
-	)
+	var buf bytes.Buffer
 	err := server.templates.ExecuteTemplate(&buf, name, data)
 	if err != nil {
 		log.Println(err)

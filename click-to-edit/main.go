@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"database/sql"
 	_ "embed"
@@ -10,6 +11,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/crhntr/httplog"
@@ -29,7 +31,7 @@ func main() {
 	server := newServer(database.New(db))
 	h := httplog.Wrap(server.routes())
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":8080", h))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), h))
 }
 
 func must[T any](value T, err error) T {

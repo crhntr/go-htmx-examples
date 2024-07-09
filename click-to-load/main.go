@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	_ "embed"
 	"html/template"
 	"math/rand"
 	"net/http"
+	"os"
 )
 
 //go:embed index.html.template
@@ -29,7 +31,7 @@ func main() {
 		res.WriteHeader(http.StatusOK)
 		_, _ = res.Write(buf.Bytes())
 	})
-	_ = http.ListenAndServe(":8080", nil)
+	_ = http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), nil)
 }
 
 func fillWithRandomNumbers(values []int) {
