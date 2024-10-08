@@ -41,7 +41,7 @@ func main() {
 			NextURL: contactsURL(page + 1),
 		})
 	})
-	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), mux))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), mux))
 }
 
 func contactsURL(page int) string {

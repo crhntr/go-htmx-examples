@@ -31,7 +31,7 @@ func main() {
 	server := newServer(database.New(db))
 	h := httplog.Wrap(server.routes())
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), h))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), h))
 }
 
 func must[T any](value T, err error) T {

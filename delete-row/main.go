@@ -61,7 +61,7 @@ func main() {
 		res.WriteHeader(http.StatusOK)
 		_, _ = res.Write(buf.Bytes())
 	})
-	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), nil))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), nil))
 }
 
 type Page struct {

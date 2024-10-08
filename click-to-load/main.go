@@ -31,7 +31,7 @@ func main() {
 		res.WriteHeader(http.StatusOK)
 		_, _ = res.Write(buf.Bytes())
 	})
-	_ = http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), nil)
+	_ = http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), nil)
 }
 
 func fillWithRandomNumbers(values []int) {

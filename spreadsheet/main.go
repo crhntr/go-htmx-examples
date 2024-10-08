@@ -33,7 +33,7 @@ func main() {
 		templates: template.Must(template.New("index.html.template").Parse(indexHTMLTemplate)),
 	}
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), s.routes()))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), s.routes()))
 }
 
 type server struct {

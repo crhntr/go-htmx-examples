@@ -33,7 +33,7 @@ func main() {
 	mux.HandleFunc("GET /", server.index)
 	mux.HandleFunc("GET /edit/{index}", server.getEdit)
 	mux.HandleFunc("POST /edit/{index}", server.postEdit)
-	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), mux))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), mux))
 }
 
 type server struct {

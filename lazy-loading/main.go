@@ -14,22 +14,22 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/endpoint", endpointHandler)
-	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), mux))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), mux))
 }
 
 func indexHandler(res http.ResponseWriter, _ *http.Request) {
 	// language=html
 	indexHTML := `<!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
   <title>Lazy Loading</title>
-  <script src="https://unpkg.com/htmx.org@2.0.0"
-          integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw"
-          crossorigin="anonymous"></script>
+  <script src='https://unpkg.com/htmx.org@2.0.0'
+          integrity='sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw'
+          crossorigin='anonymous'></script>
 </head>
 <body>
-	<div hx-get="/endpoint?sleep=2s" hx-trigger="load">
-	  <div class="htmx-indicator">
+	<div hx-get='/endpoint?sleep=2s' hx-trigger='load'>
+	  <div class='htmx-indicator'>
 		Loading...
 	  </div>
 	</div>

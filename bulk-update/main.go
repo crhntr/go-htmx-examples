@@ -37,7 +37,7 @@ func main() {
 	mux := server.routes()
 	h := httplog.Wrap(mux)
 	log.Println("starting server")
-	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), ":8080"), h))
+	log.Fatal(http.ListenAndServe(":"+cmp.Or(os.Getenv("PORT"), "8080"), h))
 }
 
 func must[T any](value T, err error) T {
