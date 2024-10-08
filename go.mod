@@ -1,6 +1,6 @@
 module github.com/crhntr/go-htmx-examples
 
-go 1.22
+go 1.23
 
 require (
 	github.com/crhntr/dom v0.1.0-alpha.4
