@@ -106,15 +106,16 @@ func Test_parse(t *testing.T) {
 			}
 			table := NewTable(10, 10)
 			table.Cells = []Cell{{Column: 0, Row: 1, Value: 100, Expression: IntegerNode{Value: 100}}}
-			exp, _, err := parse(tokens, 0, 10-1, 10-1)
+			exp, _, _, err := parse(tokens, 0, 10-1, 10-1)
 			if err != nil {
 				t.Fatal(err)
 			}
-			visited := make(visitSet)
+
+			state := newWalkState(len(table.Cells))
 
 			cell := Cell{Column: 0, Row: 0}
 
-			value, err := evaluate(&table, &cell, visited, exp)
+			value, err := evaluate(&table, &cell, state, exp)
 			if err != nil {
 				t.Fatal(err)
 			}

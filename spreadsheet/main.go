@@ -175,9 +175,12 @@ func (server *server) patchTable(res http.ResponseWriter, req *http.Request) {
 		cell.Error = ""
 		cell.input = normalizeExpression(value[0])
 
-		var expression ExpressionNode
+		var (
+			expression ExpressionNode
+			refs       []CellIdentifier
+		)
 		if cell.input != "" {
-			expression, err = newExpression(cell.input, server.table.ColumnCount-1, server.table.RowCount-1)
+			expression, refs, err = newExpression(cell.input, server.table.ColumnCount-1, server.table.RowCount-1)
 			if err != nil {
 				cell.Error = err.Error()
 				continue
@@ -185,6 +188,7 @@ func (server *server) patchTable(res http.ResponseWriter, req *http.Request) {
 			cell.input = expression.String()
 		}
 		cell.Expression = expression
+		cell.References = refs
 	}
 
 	err := server.table.calculateValues()
@@ -260,6 +264,8 @@ type Cell struct {
 	Value,
 	SavedValue int
 
+	References []CellIdentifier
+
 	input,
 	Error string
 }
@@ -302,7 +308,7 @@ func (table *Table) UnmarshalJSON(in []byte) error {
 		if err != nil {
 			return err
 		}
-		exp, err := newExpression(cell.Expression, table.ColumnCount-1, table.RowCount-1)
+		exp, refs, err := newExpression(cell.Expression, table.ColumnCount-1, table.RowCount-1)
 		if err != nil {
 			return err
 		}
@@ -311,6 +317,7 @@ func (table *Table) UnmarshalJSON(in []byte) error {
 			Row:             row,
 			SavedExpression: exp,
 			Expression:      exp,
+			References:      refs,
 		})
 	}
 
@@ -381,7 +388,7 @@ func (table *Table) calculateValues() error {
 		}
 	}
 	for i := range table.Cells {
-		visited := make(visitSet)
+		visited := newWalkState(len(table.Cells))
 		cell := &table.Cells[i]
 		err := cell.evaluate(table, visited)
 		if err != nil {
@@ -509,17 +516,17 @@ type ExpressionNode interface {
 	fmt.Stringer
 }
 
-func newExpression(in string, maxColumn, maxRow int) (ExpressionNode, error) {
+func newExpression(in string, maxColumn, maxRow int) (ExpressionNode, []CellIdentifier, error) {
 	expressionText := normalizeExpression(in)
 	tokens, err := tokenize(expressionText)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	expression, _, err := parse(tokens, 0, maxColumn, maxRow)
+	expression, references, _, err := parse(tokens, 0, maxColumn, maxRow)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return expression, nil
+	return expression, references, nil
 }
 
 type IdentifierNode struct {
@@ -575,31 +582,35 @@ func (node ParenNode) String() string {
 	return fmt.Sprintf("(%s)", node.Node)
 }
 
-func parse(tokens []Token, i, maxColumn, maxRow int) (ExpressionNode, int, error) {
-	var stack []ExpressionNode
+func parse(tokens []Token, i, maxColumn, maxRow int) (ExpressionNode, []CellIdentifier, int, error) {
+	var (
+		stack      []ExpressionNode
+		references []CellIdentifier
+	)
 	for {
-		result, consumed, err := parseNodes(stack, tokens, i, maxColumn, maxRow)
+		result, refs, consumed, err := parseNodes(stack, tokens, i, maxColumn, maxRow)
 		if err != nil {
-			return nil, consumed + i, err
+			return nil, references, consumed + i, err
 		}
+		references = append(references, refs...)
 		i += consumed
 		stack = result
 		if i < len(tokens) {
 			continue
 		}
 		if len(stack) < 1 {
-			return nil, i, fmt.Errorf("parsing failed to return an expression")
+			return nil, references, i, fmt.Errorf("parsing failed to return an expression")
 		}
 		if len(stack) > 1 {
-			return nil, i, fmt.Errorf("failed build parse tree multiple %d nodes still on stack: %#v", len(stack)-1, stack)
+			return nil, references, i, fmt.Errorf("failed build parse tree multiple %d nodes still on stack: %#v", len(stack)-1, stack)
 		}
-		return stack[0], i, nil
+		return stack[0], references, i, nil
 	}
 }
 
-func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int) ([]ExpressionNode, int, error) {
+func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int) ([]ExpressionNode, []CellIdentifier, int, error) {
 	if i >= len(tokens) {
-		return nil, i, nil
+		return nil, nil, i, nil
 	}
 
 	token := tokens[i]
@@ -608,19 +619,19 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 	case TokenNumber:
 		n, err := strconv.Atoi(token.Value)
 		if err != nil {
-			return nil, 1, fmt.Errorf("failed to parse number  %s at expression offset %d: %w", token.Value, token.Index, err)
+			return nil, nil, 1, fmt.Errorf("failed to parse number  %s at expression offset %d: %w", token.Value, token.Index, err)
 		}
-		return append(stack, IntegerNode{Token: token, Value: n}), 1, nil
+		return append(stack, IntegerNode{Token: token, Value: n}), nil, 1, nil
 	case TokenIdentifier:
 		switch token.Value {
 		case RowIdent, ColumnIdent, MaxRowIdent, MaxColumnIdent, MinRowIdent, MinColumnIdent:
-			return append(stack, VariableNode{Identifier: token}), 1, nil
+			return append(stack, VariableNode{Identifier: token}), nil, 1, nil
 		default:
 			column, row, err := parseCellID(token.Value, maxColumn, maxRow)
 			if err != nil {
-				return nil, 0, err
+				return nil, nil, 0, err
 			}
-			return append(stack, IdentifierNode{Token: token, Row: row, Column: column}), 1, nil
+			return append(stack, IdentifierNode{Token: token, Row: row, Column: column}), []CellIdentifier{{row: row, column: column}}, 1, nil
 		}
 	case TokenLeftParenthesis:
 		var (
@@ -629,29 +640,29 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 		)
 		i += 1
 		for {
-			result, consumed, err := parseNodes(parenStack, tokens, i, maxColumn, maxRow)
+			result, refs, consumed, err := parseNodes(parenStack, tokens, i, maxColumn, maxRow)
 			if err != nil {
-				return nil, 0, err
+				return nil, nil, 0, err
 			}
 			totalConsumed += consumed
 			i += consumed
 			if i >= len(tokens) {
-				return nil, 0, fmt.Errorf("parenthesis at expression offset %d is missing closing parenthesis", token.Index)
+				return nil, refs, 0, fmt.Errorf("parenthesis at expression offset %d is missing closing parenthesis", token.Index)
 			}
 			if tokens[i].Type != TokenRightParenthesis {
 				parenStack = result
 				continue
 			}
 			if len(result) == 0 {
-				return nil, 0, fmt.Errorf("parentheses expression is empty")
+				return nil, refs, 0, fmt.Errorf("parentheses expression is empty")
 			}
 			return append(stack, ParenNode{
 				Node: result[0],
-			}), totalConsumed + 1, nil
+			}), refs, totalConsumed + 1, nil
 		}
 	case TokenExclamation:
 		if len(stack) == 0 {
-			return nil, 0, fmt.Errorf("malformed factorial expression")
+			return nil, nil, 0, fmt.Errorf("malformed factorial expression")
 		}
 		top := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
@@ -664,14 +675,14 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 					Right: FactorialNode{
 						Expression: b.Right,
 					},
-				}), 1, nil
+				}), nil, 1, nil
 			}
 		}
 
 		stack = append(stack, FactorialNode{
 			Expression: top,
 		})
-		return stack, 1, nil
+		return stack, nil, 1, nil
 	case TokenAdd, TokenSubtract, TokenMultiply, TokenDivide, TokenExponent:
 		node := BinaryExpressionNode{
 			Op: token,
@@ -679,7 +690,7 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 
 		if len(stack) == 0 {
 			if token.Type != TokenSubtract {
-				return stack, 0, fmt.Errorf("binary expression for operator at index %d missing left hand side", token.Index)
+				return stack, nil, 0, fmt.Errorf("binary expression for operator at index %d missing left hand side", token.Index)
 			}
 			node.Left = IntegerNode{Value: 0}
 		} else {
@@ -687,12 +698,12 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 			stack = stack[:len(stack)-1]
 		}
 
-		rightExpression, consumed, err := parseNodes(nil, tokens, i+1, maxColumn, maxRow)
+		rightExpression, refs, consumed, err := parseNodes(nil, tokens, i+1, maxColumn, maxRow)
 		if err != nil {
-			return nil, 1 + consumed, err
+			return nil, refs, 1 + consumed, err
 		}
 		if len(rightExpression) != 1 {
-			return stack, 0, fmt.Errorf("weird right hand expression after operator at offet %d", token.Index)
+			return stack, refs, 0, fmt.Errorf("weird right hand expression after operator at offet %d", token.Index)
 		}
 		node.Right = rightExpression[0]
 
@@ -710,42 +721,56 @@ func parseNodes(stack []ExpressionNode, tokens []Token, i, maxColumn, maxRow int
 						Left:  leftRight,
 						Right: rightNode,
 					},
-				}), 1 + consumed, nil
+				}), nil, 1 + consumed, nil
 			}
 		}
 
-		return append(stack, node), 1 + consumed, nil
+		return append(stack, node), nil, 1 + consumed, nil
 	case TokenRightParenthesis:
-		return nil, 0, fmt.Errorf("unexpected right parenthesis at expression offest %d", token.Index)
+		return nil, nil, 0, fmt.Errorf("unexpected right parenthesis at expression offest %d", token.Index)
 	}
 
-	return nil, 0, nil
+	return nil, nil, 0, nil
 }
 
-type visit struct {
-	colum, row int
+type CellIdentifier struct {
+	column, row int
 }
 
-type visitSet map[visit]struct{}
+type walkState struct {
+	temporal  []bool
+	permanent []bool
+	indexes   map[CellIdentifier]int
+}
 
-func (cell *Cell) evaluate(table *Table, visited visitSet) error {
-	v := visit{
-		colum: cell.Column,
-		row:   cell.Row,
+func newWalkState(n int) walkState {
+	states := make([]bool, 2*n)
+	return walkState{
+		temporal:  states[:n],
+		permanent: states[n:],
+		indexes:   make(map[CellIdentifier]int),
 	}
-	_, alreadyVisited := visited[v]
-	if alreadyVisited {
+}
+
+func (cell *Cell) evaluate(table *Table, state walkState) error {
+	cid := CellIdentifier{column: cell.Column, row: cell.Row}
+	index := state.indexes[cid]
+	if state.permanent[index] {
+		return nil
+	}
+	if state.temporal[index] {
 		return fmt.Errorf("recursive reference to %s%d", columnLabel(cell.Column), cell.Row)
 	}
-	visited[v] = struct{}{}
+	state.temporal[index] = true
 	if cell.Expression == nil {
 		cell.Value = 0
 		return nil
 	}
-	result, err := evaluate(table, cell, visited, cell.Expression)
+	result, err := evaluate(table, cell, state, cell.Expression)
 	if err != nil {
 		return err
 	}
+	state.permanent[index] = true
 	cell.Value = result
 	return nil
 }
@@ -759,16 +784,16 @@ const (
 	MinColumnIdent = "MIN_COLUMN"
 )
 
-func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode ExpressionNode) (int, error) {
+func evaluate(table *Table, cell *Cell, state walkState, expressionNode ExpressionNode) (int, error) {
 	switch node := expressionNode.(type) {
 	case IdentifierNode:
 		cell := table.Cell(node.Column, node.Row)
-		err := cell.evaluate(table, visited)
+		err := cell.evaluate(table, state)
 		return cell.Value, err
 	case IntegerNode:
 		return node.Value, nil
 	case ParenNode:
-		return evaluate(table, cell, visited, node.Node)
+		return evaluate(table, cell, state, node.Node)
 	case VariableNode:
 		switch node.Identifier.Value {
 		case RowIdent:
@@ -785,7 +810,7 @@ func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode Express
 			return 0, fmt.Errorf("unknown variable %s", node.Identifier.Value)
 		}
 	case FactorialNode:
-		n, err := evaluate(table, cell, visited, node.Expression)
+		n, err := evaluate(table, cell, state, node.Expression)
 		if err != nil {
 			return 0, err
 		}
@@ -797,11 +822,11 @@ func evaluate(table *Table, cell *Cell, visited visitSet, expressionNode Express
 		}
 		return n, nil
 	case BinaryExpressionNode:
-		leftResult, err := evaluate(table, cell, visited, node.Left)
+		leftResult, err := evaluate(table, cell, state, node.Left)
 		if err != nil {
 			return 0, err
 		}
-		rightResult, err := evaluate(table, cell, visited, node.Right)
+		rightResult, err := evaluate(table, cell, state, node.Right)
 		if err != nil {
 			return 0, err
 		}
