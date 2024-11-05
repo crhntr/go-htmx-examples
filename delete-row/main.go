@@ -57,7 +57,7 @@ func main() {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		res.Header().Set("content-type", "text/html")
+		res.Header().Set("content-type", "test/html; charset=utf-8")
 		res.WriteHeader(http.StatusOK)
 		_, _ = res.Write(buf.Bytes())
 	})

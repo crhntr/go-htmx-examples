@@ -107,7 +107,7 @@ func (server *Server) writePage(res http.ResponseWriter, _ *http.Request, name s
 		http.Error(res, "failed to write page", http.StatusInternalServerError)
 		return
 	}
-	res.Header().Set("content-type", "text/html")
+	res.Header().Set("content-type", "test/html; charset=utf-8")
 	res.WriteHeader(status)
 	_, _ = res.Write(buf.Bytes())
 }

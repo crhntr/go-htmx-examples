@@ -62,7 +62,7 @@ func (server *server) render(res http.ResponseWriter, _ *http.Request, name stri
 		return
 	}
 	header := res.Header()
-	header.Set("content-type", "text/html")
+	header.Set("content-type", "test/html; charset=utf-8")
 	res.WriteHeader(status)
 	_, _ = res.Write(buf.Bytes())
 }

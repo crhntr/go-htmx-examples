@@ -175,7 +175,7 @@ func (server *Server) writePage(res http.ResponseWriter, req *http.Request, name
 		return
 	}
 
-	res.Header().Set("content-type", "text/html")
+	res.Header().Set("content-type", "test/html; charset=utf-8")
 	res.WriteHeader(status)
 	_, _ = res.Write(buf.Bytes())
 }
