@@ -11,7 +11,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/crhntr/dom/domtest"
+	"github.com/typelate/dom/domtest"
 
 	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/database"
 	"github.com/crhntr/go-htmx-examples/click-to-edit/internal/fakes"
