@@ -2,6 +2,8 @@ github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kk
 github.com/andybalholm/cascadia v1.3.3/go.mod h1:xNd9bqTn98Ln4DwST8/nG+H0yuB8Hmgu1YHNnWw0GeA=
 github.com/crhntr/dom v0.1.0-dev.7 h1:KFrjwW8hV3liPAhYbtZTuGcHuVvFpk9rwZTcc3uwgL8=
 github.com/crhntr/dom v0.1.0-dev.7/go.mod h1:vhJEL2iLbRD+Isp2skmSE2qhSPp0E8AT1dv0KkW4XA8=
+github.com/crhntr/dom v0.5.4 h1:eXKB1E6pjdwi7W1zj/Vkr+AAD00tuvkUBJAtkyGdjTs=
+github.com/crhntr/dom v0.5.4/go.mod h1:8+qaWA/FxLEN5ogqrIgB+ibM/bCCZLJfDCwfbuocoUU=
 github.com/crhntr/httplog v1.0.0 h1:CtnQoqe8RKPR1My8bXRJ2tWcJVBa1QfesFeNoI8hfa8=
 github.com/crhntr/httplog v1.0.0/go.mod h1:nVjp8iphIwbLetOZPkHGgSUqNsbz1ZvU68JZXBzJfjU=
 github.com/crhntr/httplog v1.3.0 h1:KNdz4jjdirsiB6et3IXF6AjVU2qDLgA2luaE0JfKt/A=
@@ -41,6 +43,8 @@ golang.org/x/net v0.21.0/go.mod h1:bIjVDfnllIU7BJ2DNgfnXvpSvtn8VRwhlsaeUTyUS44=
 golang.org/x/net v0.25.0/go.mod h1:JkAGAh7GEvH74S6FOH42FLoXpXbE/aqXSrIQjXgsiwM=
 golang.org/x/net v0.33.0 h1:74SYHlV8BIgHIFC/LrYkOGIwL19eTYXQ5wc6TBuO36I=
 golang.org/x/net v0.33.0/go.mod h1:HXLR5J+9DxmrqMwG9qjGCxZ+zKXxBru04zlTvWlWuN4=
+golang.org/x/net v0.47.0 h1:Mx+4dIFzqraBXUugkia1OOvlD6LemFo1ALMHjrXDOhY=
+golang.org/x/net v0.47.0/go.mod h1:/jNxtkgq5yWUGYkaZGqo27cfGZ1c5Nen03aYrrKpVRU=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.1.0/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

@@ -36,7 +36,7 @@ func TestIndexLinks(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
-	document := domtest.Response(t, res)
+	document := domtest.ParseResponseDocument(t, res)
 
 	contactsLinks := document.QuerySelectorAll("ul li a[href]")
 	assert.Equal(t, 2, contactsLinks.Length())
@@ -77,7 +77,7 @@ func TestViewContact(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestViewContactInvalidID(t *testing.T) {
@@ -118,7 +118,7 @@ func TestEditContact(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusOK, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestViewContactNotFound(t *testing.T) {
@@ -134,7 +134,7 @@ func TestViewContactNotFound(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusNotFound, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestEditContactNotFound(t *testing.T) {
@@ -150,7 +150,7 @@ func TestEditContactNotFound(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusNotFound, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestSubmitContact(t *testing.T) {
@@ -183,7 +183,7 @@ func TestSubmitContact(t *testing.T) {
 	assert.Equal(t, "orange", query.LastName)
 	assert.Equal(t, "cara.orange@example.com", query.Email)
 
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestSubmitContactError(t *testing.T) {
@@ -206,7 +206,7 @@ func TestSubmitContactError(t *testing.T) {
 	assert.Zero(t, db.ContactWithIDCallCount())
 
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestSubmitContactUpdateFails(t *testing.T) {
@@ -230,7 +230,7 @@ func TestSubmitContactUpdateFails(t *testing.T) {
 	assert.Zero(t, db.ContactWithIDCallCount())
 
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestSubmitContactGetFails(t *testing.T) {
@@ -252,7 +252,7 @@ func TestSubmitContactGetFails(t *testing.T) {
 	res := rec.Result()
 
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func TestSubmitContactParseFails(t *testing.T) {
@@ -272,7 +272,7 @@ func TestSubmitContactParseFails(t *testing.T) {
 	assert.Zero(t, db.UpdateContactCallCount())
 
 	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
-	_ = domtest.Response(t, res)
+	_ = domtest.ParseResponseDocument(t, res)
 }
 
 func Test_write_full_page_missing_page(t *testing.T) {
