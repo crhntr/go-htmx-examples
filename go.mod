@@ -6,7 +6,7 @@ require (
 	github.com/crhntr/dom v0.1.0-dev.7
 	github.com/crhntr/httplog v1.3.0
 	github.com/crhntr/sse v0.1.0
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/mattn/go-sqlite3 v1.14.32
 )
 
 require (
