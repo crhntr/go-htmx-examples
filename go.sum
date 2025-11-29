@@ -4,6 +4,8 @@ github.com/crhntr/dom v0.1.0-dev.7 h1:KFrjwW8hV3liPAhYbtZTuGcHuVvFpk9rwZTcc3uwgL
 github.com/crhntr/dom v0.1.0-dev.7/go.mod h1:vhJEL2iLbRD+Isp2skmSE2qhSPp0E8AT1dv0KkW4XA8=
 github.com/crhntr/httplog v1.0.0 h1:CtnQoqe8RKPR1My8bXRJ2tWcJVBa1QfesFeNoI8hfa8=
 github.com/crhntr/httplog v1.0.0/go.mod h1:nVjp8iphIwbLetOZPkHGgSUqNsbz1ZvU68JZXBzJfjU=
+github.com/crhntr/httplog v1.3.0 h1:KNdz4jjdirsiB6et3IXF6AjVU2qDLgA2luaE0JfKt/A=
+github.com/crhntr/httplog v1.3.0/go.mod h1:CED2EdkCBMSkKBA1jZ7tqBIrymGkLl7IoN5wZD3E3o0=
 github.com/crhntr/sse v0.1.0 h1:kmNjwyGReykuzNWJGE19SXHdw5etcjwsqk7e9/nQ/oM=
 github.com/crhntr/sse v0.1.0/go.mod h1:NHkaAcDlZO8zQ1gFe0ovmDus7rwkDa9kmDWECpWXgEU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

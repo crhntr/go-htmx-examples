@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/crhntr/dom v0.1.0-dev.7
-	github.com/crhntr/httplog v1.0.0
+	github.com/crhntr/httplog v1.3.0
 	github.com/crhntr/sse v0.1.0
 	github.com/mattn/go-sqlite3 v1.14.24
 )
