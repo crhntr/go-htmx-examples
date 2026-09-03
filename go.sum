@@ -1,7 +1,7 @@
 github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kktS1LM=
 github.com/andybalholm/cascadia v1.3.3/go.mod h1:xNd9bqTn98Ln4DwST8/nG+H0yuB8Hmgu1YHNnWw0GeA=
-github.com/crhntr/httplog v1.3.0 h1:KNdz4jjdirsiB6et3IXF6AjVU2qDLgA2luaE0JfKt/A=
-github.com/crhntr/httplog v1.3.0/go.mod h1:CED2EdkCBMSkKBA1jZ7tqBIrymGkLl7IoN5wZD3E3o0=
+github.com/crhntr/httplog v1.4.0 h1:ui4qmtEUGWJ1sW0jdtHttlYmeZUdiPB7cXqtvV8i+EU=
+github.com/crhntr/httplog v1.4.0/go.mod h1:X+07MDn2wC3cJsyXTvD6bNstshfxJlAlY7PxE6da8hU=
 github.com/crhntr/sse v0.1.0 h1:kmNjwyGReykuzNWJGE19SXHdw5etcjwsqk7e9/nQ/oM=
 github.com/crhntr/sse v0.1.0/go.mod h1:NHkaAcDlZO8zQ1gFe0ovmDus7rwkDa9kmDWECpWXgEU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
