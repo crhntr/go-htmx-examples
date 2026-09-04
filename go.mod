@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/crhntr/httplog v1.4.0
 	github.com/crhntr/sse v0.1.0
-	github.com/mattn/go-sqlite3 v1.14.32
+	github.com/mattn/go-sqlite3 v1.14.50
 	github.com/typelate/dom v0.9.0
 )
 
